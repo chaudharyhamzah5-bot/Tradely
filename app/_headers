@@ -1,0 +1,6 @@
+# Netlify / Cloudflare Pages: keep the service worker and manifest fresh
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache

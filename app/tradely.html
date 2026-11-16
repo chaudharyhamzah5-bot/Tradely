@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <script src="js/profiles.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/cloud-sql.js"></script>
+    <script src="js/supabase-sync.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#090a0f">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Tradely">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <title>Tradely — Accounts</title>
+    <!-- Tailwind CSS v3 via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (bundled inline - no external CDN dependency) -->
+    <script src="vendor/lucide.min.js"></script>
+    <!-- Chart.js for Pro Analytics -->
+    <script src="vendor/chart.umd.js"></script>
+    <!-- TradingView Lightweight Charts (bundled inline - no external CDN dependency) -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="js/shared.js"></script>
+    <script src="js/a11y.js" defer></script>
+    <script src="js/profiles-ui.js" defer></script>
+    <script src="js/settings-data.js" defer></script>
+    <script src="js/notifications.js" defer></script>
+    <script src="js/pwa.js" defer></script>
+    <link rel="stylesheet" href="css/tradely.css">
+    <link rel="stylesheet" href="css/settings.css">
+    <link rel="stylesheet" href="css/mobile.css">
+    <script src="js/mobile-nav.js" defer></script>
+</head>
+<body data-mnav-home="nav-accounts-overview" data-mnav-label="Accounts" data-mnav-icon="wallet" data-mnav-match="^nav-(accounts|forex)" class="bg-aura-bg text-gray-300 antialiased selection:bg-aura-accent selection:text-white">
+
+    <!-- ==================== PAGE LOADER (shown while this page boots / while navigating between sections) ==================== -->
+    <div id="page-loader" class="fixed inset-0 z-[999] flex items-center justify-center transition-opacity duration-300 ease-out" style="position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:#090a0f;">
+        <div class="flex flex-col items-center gap-4">
+            <div class="relative w-12 h-12 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-2xl border-2 border-aura-border"></div>
+                <div class="absolute inset-0 rounded-2xl border-2 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+                <span class="text-white font-black text-base">Δ</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="font-bold tracking-wider text-white text-xs">TRADELY</span>
+                <span class="text-[10px] text-blue-500 font-mono">// OS</span>
+            </div>
+            <div class="text-[10px] text-gray-500 font-mono" id="page-loader-label">Loading Accounts…</div>
+        </div>
+    </div>
+
+    <div class="app-root flex h-screen w-screen overflow-hidden">
+
+        <!-- ==================== 1. PERSISTENT SIDEBAR ==================== -->
+        <aside id="sidebar" class="w-64 bg-aura-card border-r border-aura-border flex flex-col justify-between transition-all duration-300 z-30 shrink-0 select-none">
+            <div>
+                <!-- Brand Header -->
+                <div class="h-14 px-4 border-b border-aura-border flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-500/20">
+                            Δ
+                        </div>
+                        <span class="font-bold tracking-wider text-white text-sm brand-text">TRADELY <span class="text-xs text-blue-500 font-mono">// OS</span></span>
+                    </div>
+                    <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white p-1 rounded hover:bg-aura-hover transition" aria-label="Toggle sidebar">
+                        <i data-lucide="chevron-left" class="w-4 h-4" id="collapse-icon"></i>
+                    </button>
+                </div>
+
+                <!-- Navigation Sections -->
+                <div class="p-2 space-y-6 overflow-y-auto max-h-[calc(100vh-120px)]">
+                    
+                    <!-- SECTION 1: ACCOUNTS -->
+                    <div>
+                        <div class="px-3 mb-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider brand-text">Accounts</div>
+                        <nav class="space-y-0.5">
+                            <button onclick="switchTab('accounts-overview')" id="nav-accounts-overview" class="nav-item active-tab w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-300 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-400"></i>
+                                <span class="brand-text">Overview</span>
+                            </button>
+                            <button onclick="switchTab('accounts-list')" id="nav-accounts-list" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="wallet" class="w-4 h-4"></i>
+                                <span class="brand-text">Accounts</span>
+                            </button>
+                            <button onclick="switchTab('accounts-calendar')" id="nav-accounts-calendar" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="calendar" class="w-4 h-4"></i>
+                                <span class="brand-text">Calendar</span>
+                            </button>
+                            <button onclick="switchTab('accounts-stats')" id="nav-accounts-stats" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                                <span class="brand-text">Stats</span>
+                            </button>
+                            <button onclick="switchTab('accounts-monthly')" id="nav-accounts-monthly" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="calendar-range" class="w-4 h-4"></i>
+                                <span class="brand-text">Monthly Summary</span>
+                            </button>
+                            <button onclick="switchTab('accounts-journal')" id="nav-accounts-journal" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="book-open" class="w-4 h-4"></i>
+                                <span class="brand-text">Journal</span>
+                            </button>
+                            <button onclick="switchTab('accounts-sessions')" id="nav-accounts-sessions" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="globe" class="w-4 h-4"></i>
+                                <span class="brand-text">Sessions</span>
+                            </button>
+                            <button onclick="switchTab('accounts-strategies')" id="nav-accounts-strategies" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="target" class="w-4 h-4"></i>
+                                <span class="brand-text">Strategies &amp; Rules</span>
+                            </button>
+                            <button onclick="switchTab('accounts-psychology')" id="nav-accounts-psychology" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="brain" class="w-4 h-4"></i>
+                                <span class="brand-text">Psychology</span>
+                            </button>
+                            <button onclick="switchTab('accounts-notes')" id="nav-accounts-notes" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                                <span class="brand-text">Notes</span>
+                            </button>
+                            <button onclick="switchTab('accounts-certificates')" id="nav-accounts-certificates" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="award" class="w-4 h-4"></i>
+                                <span class="brand-text">Certificates</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                                        <!-- SECTION 4: SETTINGS -->
+                    <div>
+                        <div class="px-3 mb-2 text-[10px] font-semibold text-gray-500 uppercase tracking-wider brand-text">Settings</div>
+                        <nav class="space-y-0.5">
+                            <button onclick="switchTab('settings')" id="nav-settings" class="nav-item w-full flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition text-gray-400 hover:bg-aura-hover hover:text-white">
+                                <i data-lucide="settings" class="w-4 h-4 text-gray-400"></i>
+                                <span class="brand-text">Settings</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Footer / Profile -->
+            <div class="p-3 border-t border-aura-border bg-aura-bg/50">
+                <div class="flex items-center gap-3">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full border border-aura-border object-cover" alt="Avatar">
+                    <div class="overflow-hidden brand-text">
+                        <div class="text-xs font-semibold text-white truncate">Alex Vance</div>
+                        <div class="text-[10px] text-gray-500 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-aura-green"></span>
+                            FTMO $100k Master
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ==================== MAIN CONTENT AREA ==================== -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-aura-bg relative">
+            
+            <!-- TOP BAR -->
+            <header class="h-14 border-b border-aura-border bg-aura-card/50 backdrop-blur-md px-3 md:px-6 flex items-center justify-between z-20 shrink-0">
+                <!-- Page Title / Breadcrumb -->
+                <div class="flex items-center gap-3">
+                    <h1 id="page-title" class="text-sm font-bold text-white tracking-wide">Overview</h1>
+                    <span class="text-aura-border hidden sm:inline">/</span>
+                    <span id="page-subtitle" class="hidden sm:inline text-xs text-gray-500 font-mono">FTMO #884920</span>
+                </div>
+
+                <!-- Status & Action Bar -->
+                <div class="flex items-center gap-4">
+                    <!-- Global Market Status -->
+                    <div class="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-aura-bg border border-aura-border text-[11px] font-mono">
+                        <span class="w-2 h-2 rounded-full bg-aura-green animate-pulse"></span>
+                        <span class="text-gray-300">NY SESSION</span>
+                        <span class="text-gray-600">|</span>
+                        <span id="live-clock" class="text-gray-400">14:32:05 EST</span>
+                    </div>
+
+                    <!-- Calculator -->
+                    <button id="calc-toggle" onclick="calcToggle()" title="Calculator" aria-label="Open calculator" aria-expanded="false" class="relative p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-aura-hover border border-transparent transition">
+                        <i data-lucide="calculator" class="w-4 h-4"></i>
+                    </button>
+
+                    <!-- Command K Search Button -->
+                    <button onclick="toggleCommandPalette()" class="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-md bg-aura-bg border border-aura-border text-xs text-gray-400 hover:text-white hover:border-gray-600 transition">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                        <span>Search / Cmd K</span>
+                        <kbd class="px-1.5 py-0.5 text-[9px] font-mono bg-aura-card rounded text-gray-500 border border-aura-border">⌘K</kbd>
+                    </button>
+
+                    <!-- Notifications -->
+                    <button class="relative p-1.5 text-gray-400 hover:text-white rounded-md hover:bg-aura-hover transition" aria-label="Notifications">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB CONTENT CONTAINER -->
+            <div class="flex-1 overflow-y-auto p-3 md:p-6 space-y-6" id="content-container">
+
+                <!-- ==================== 1. ACCOUNTS OVERVIEW ==================== -->
+                <div id="tab-accounts-overview" class="tab-content space-y-5">
+                    <div class="grid grid-cols-1 gap-5">
+                    <div class="min-w-0 space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Performance Overview</h2>
+                            <p id="ov-sub" class="text-xs text-gray-500"></p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <select id="ov-acc" onchange="ovSetAcc(this.value)" class="bg-aura-card border border-aura-border rounded-md text-xs text-gray-200 px-2.5 py-1.5 focus:outline-none focus:border-blue-500/50 max-w-[220px]"></select>
+                            <div id="ov-ranges" class="flex gap-0.5 p-0.5 bg-aura-card border border-aura-border rounded-md"></div>
+                        </div>
+                    </div>
+                    <div id="ov-empty" class="hidden glass-card rounded-xl border border-dashed border-aura-border p-12 text-center space-y-2">
+                        <p class="text-sm font-bold text-white">No trading data in this view yet</p>
+                        <p class="text-xs text-gray-500">Log trades from the Calendar of an MT5 or Binary account and your stats will appear here automatically.</p>
+                        <button onclick="switchTab('accounts-calendar')" class="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition">Open Calendar</button>
+                    </div>
+                    <div id="ov-kpis" class="grid grid-cols-2 md:grid-cols-3 gap-3"></div>
+                    </div>
+                    </div>
+                    <div id="ov-body" class="space-y-5">
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                            <div class="xl:col-span-2 glass-card p-5 rounded-xl border border-aura-border">
+                                <div class="flex items-center justify-between mb-3"><h3 class="text-sm font-bold text-white">Cumulative P&amp;L</h3><span id="ov-eq-total" class="text-xs font-mono"></span></div>
+                                <div class="h-60 w-full"><canvas id="ov-eq"></canvas></div>
+                            </div>
+                            <div id="ov-side" class="glass-card p-5 rounded-xl border border-aura-border"></div>
+                        </div>
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                            <div class="xl:col-span-2 glass-card p-5 rounded-xl border border-aura-border">
+                                <h3 class="text-sm font-bold text-white mb-3">Daily P&amp;L</h3>
+                                <div class="h-52 w-full"><canvas id="ov-daily"></canvas></div>
+                            </div>
+                            <div id="ov-accounts" class="glass-card p-5 rounded-xl border border-aura-border"></div>
+                        </div>
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                            <div class="xl:col-span-2 glass-card rounded-xl border border-aura-border overflow-hidden">
+                                <div class="p-4 border-b border-aura-border flex items-center justify-between">
+                                    <h3 class="text-sm font-bold text-white">Recent Entries</h3>
+                                    <button onclick="switchTab('accounts-journal')" class="text-xs text-aura-accent hover:underline">Open Journal →</button>
+                                </div>
+                                <div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="bg-aura-bg/80 font-mono text-gray-500 uppercase text-[10px] border-b border-aura-border"><tr><th class="p-3">Date</th><th class="p-3">Account</th><th class="p-3">Entry</th><th class="p-3">Result</th><th class="p-3 text-right">P&amp;L</th></tr></thead><tbody id="ov-recent" class="divide-y divide-aura-border font-mono"></tbody></table></div>
+                            </div>
+                            <div id="ov-extra" class="glass-card p-5 rounded-xl border border-aura-border"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== 2. JOURNAL ==================== -->
+                <div id="tab-accounts-journal" class="tab-content hidden space-y-3">
+                    <!-- Account picker + filters -->
+                    <div class="glass-card rounded-xl border border-aura-border p-3 flex flex-wrap items-center gap-3 relative" style="z-index:30;">
+                        <div id="jr-acc-wrap" class="relative">
+                            <button id="jr-acc-btn" type="button" onclick="jrToggleAccMenu(event)" class="flex items-center gap-2.5 pl-3 pr-2.5 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:border-blue-400/60 transition text-left max-w-full" aria-label="Toggle account menu">
+                                <i data-lucide="user-round" class="w-4 h-4 text-blue-400 shrink-0"></i>
+                                <span id="jr-acc-label" class="flex items-center gap-2 min-w-0 text-xs"></span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 shrink-0"></i>
+                            </button>
+                            <div id="jr-acc-menu" class="hidden absolute left-0 top-full mt-1.5 w-80 max-w-[90vw] max-h-80 overflow-y-auto rounded-lg shadow-2xl border border-aura-border" style="background-color:#14161f;"></div>
+                        </div>
+                        <div class="flex-1"></div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input id="jr-search" type="text" oninput="jrSetQuery(this.value)" placeholder="Search pair, notes, mistakes, tags" class="bg-aura-bg border border-aura-border text-xs rounded-md px-3 py-1.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 w-60">
+                            <span id="jr-range"></span>
+                            <select id="jr-result" onchange="jrSetResult(this.value)" class="bg-aura-bg border border-aura-border text-xs rounded-md px-2.5 py-1.5 text-gray-300 focus:outline-none focus:border-blue-500/50">
+                                <option value="all">All results</option>
+                                <option value="win">Wins</option>
+                                <option value="loss">Losses</option>
+                                <option value="be">Break-even</option>
+                            </select>
+                            <span id="jr-count" class="text-[11px] text-gray-500 mono whitespace-nowrap"></span>
+                        </div>
+                    </div>
+
+                    <!-- Empty state: no account / no entries -->
+                    <div id="jr-empty" class="hidden glass-card rounded-xl border border-aura-border p-10 text-center"></div>
+
+                    <div id="jr-body">
+                        <div class="glass-card rounded-xl border border-aura-border overflow-hidden">
+                            <div id="jr-list-scroll" class="jr-scroll" style="max-height:calc(100vh - 175px);">
+                                <table class="jr-table" id="jr-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="jr-c1">Date</th>
+                                            <th class="jr-c2">Pair</th>
+                                            <th>Result</th>
+                                            <th class="text-right">P&amp;L</th>
+                                            <th>R / W-L</th>
+                                            <th class="jr-acc-col">Account</th>
+                                            <th class="text-right">Entry</th>
+                                            <th class="text-right">Stop loss</th>
+                                            <th class="text-right">Take profit</th>
+                                            <th class="text-right">Lot</th>
+                                            <th>Session</th>
+                                            <th>Discipline</th>
+                                            <th>Mistake</th>
+                                            <th>Why I took it</th>
+                                            <th>Notes</th>
+                                            <th>Tags</th>
+                                            <th class="text-right">Screenshot</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="jr-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+<!-- ==================== 3. CALENDAR ==================== -->
+                <div id="tab-accounts-calendar" class="tab-content hidden space-y-4">
+                    <div class="glass-card p-3 rounded-xl border border-aura-border flex flex-wrap items-center justify-between gap-2 relative" style="z-index: 30;">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <!-- Calendar Type Selector: Forex / Binary -->
+                            <div class="relative">
+                                <button onclick="toggleCalendarTypeMenu()" class="flex items-center gap-2 px-3 py-1.5 rounded-md bg-aura-bg border border-aura-border text-xs font-semibold text-white hover:border-blue-500/40 transition">
+                                    <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-gray-400"></i>
+                                    <span id="calendar-type-label">Forex</span>
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500"></i>
+                                </button>
+                                <div id="calendar-type-menu" class="hidden absolute left-0 mt-1 w-32 rounded-md shadow-2xl overflow-hidden z-40 border border-aura-border" style="background-color:#14161f;">
+                                    <button data-type="forex" onclick="switchCalendarType('forex')" class="calendar-type-option w-full text-left px-3 py-2 text-xs font-medium text-blue-400 hover:bg-aura-hover transition">Forex</button>
+                                    <button data-type="binary" onclick="switchCalendarType('binary')" class="calendar-type-option w-full text-left px-3 py-2 text-xs font-medium text-gray-300 hover:bg-aura-hover transition">Binary</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button id="calendar-prev-btn" onclick="calendarPrevMonth()" class="p-1 rounded bg-aura-bg border border-aura-border text-gray-400 hover:text-white transition" aria-label="Previous month"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                                <div class="relative">
+                                    <button id="calendar-month-label" onclick="toggleMonthYearPicker()" class="text-base font-bold text-white text-center w-36 rounded-md hover:bg-aura-hover transition px-1.5 py-0.5">August 2026</button>
+                                    <div id="calendar-month-picker" class="hidden absolute left-1/2 -translate-x-1/2 mt-1 w-56 rounded-md shadow-2xl border border-aura-border z-40 p-3" style="background-color:#14161f;">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <button onclick="mypShiftYear(-1)" class="p-1 rounded bg-aura-bg border border-aura-border text-gray-400 hover:text-white" aria-label="Change year"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+                                            <span id="calendar-month-picker-year" class="text-sm font-bold text-white font-mono"></span>
+                                            <button onclick="mypShiftYear(1)" class="p-1 rounded bg-aura-bg border border-aura-border text-gray-400 hover:text-white" aria-label="Change year"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+                                        </div>
+                                        <div id="calendar-month-picker-grid" class="grid grid-cols-3 gap-1.5"></div>
+                                    </div>
+                                </div>
+                                <button id="calendar-next-btn" onclick="calendarNextMonth()" class="p-1 rounded bg-aura-bg border border-aura-border text-gray-400 hover:text-white transition" aria-label="Next month"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                            </div>
+                            <button id="calendar-today-btn" onclick="calendarGoToday()" class="px-2.5 py-1 text-xs bg-aura-hover text-white rounded border border-aura-border hover:bg-aura-border/40 transition">Today</button>
+                        </div>
+
+                        <!-- Linked Account Selector: click to switch between each account's own calendar (Forex shows CFD accounts, Binary shows Binary accounts).
+                             Shows Name - Platform - Demo/Real - Starting Balance for the selected account. -->
+                        <div id="calendar-account-badge" class="relative hidden items-center gap-2 px-3 py-1.5 rounded-lg border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-transparent shrink-0 cursor-pointer select-none hover:border-blue-400/60 transition" onclick="toggleCalendarAccountMenu(event)">
+                            <i data-lucide="user-round" class="w-3.5 h-3.5 text-blue-400 shrink-0"></i>
+                            <span id="calendar-account-badge-text" class="text-xs font-semibold tracking-wide font-mono whitespace-nowrap"></span>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-gray-500 shrink-0"></i>
+                            <div id="calendar-account-menu" class="hidden absolute left-0 top-full mt-1.5 w-64 rounded-lg shadow-2xl overflow-hidden z-40 border border-aura-border max-h-72 overflow-y-auto" style="background-color:#14161f;" onclick="event.stopPropagation()"></div>
+                        </div>
+
+                        <div class="flex items-center gap-2 text-xs font-mono flex-wrap">
+                            <!-- Monthly stats text removed per request; values still tracked internally for calculations -->
+                            <span id="calendar-monthly-pnl" class="hidden"></span>
+                            <span id="calendar-winrate" class="hidden"></span>
+                            <span id="calendar-trade-count" class="hidden"></span>
+
+                            <!-- Show Stats Toggle -->
+                            <button id="show-stats-btn" onclick="toggleStatsPanel()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-aura-hover border border-aura-border text-gray-300 hover:text-white hover:border-blue-500/40 transition font-sans font-semibold">
+                                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+                                <span id="show-stats-btn-label">Show Stats</span>
+                            </button>
+
+                            <!-- Open Panel -->
+                            <button id="calendar-open-panel-btn" onclick="openSidePanel()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-aura-hover border border-aura-border text-gray-300 hover:text-white hover:border-blue-500/40 transition font-sans font-semibold">
+                                <i data-lucide="panel-right" class="w-3.5 h-3.5"></i>
+                                <span>Open Panel</span>
+                            </button>
+
+                            <!-- Monthly / All Time / Yearly / Traded Months view cycle -->
+                            <button id="calendar-view-mode-btn" onclick="cycleCalendarViewMode()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 border border-blue-500/40 text-white transition font-sans font-semibold shadow-md shadow-blue-600/20">
+                                <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i>
+                                <span id="calendar-view-mode-label">Monthly View</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pinned Stats: Current Balance / Starting Balance / Total PNL — always visible regardless of Show/Hide Stats -->
+                    <div id="pinned-stats-row" class="grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
+
+                    <!-- Stats Panel (toggled, animated) -->
+                    <div id="stats-panel" class="stats-panel-anim glass-card p-4 rounded-xl border border-aura-border">
+                        <div id="stats-panel-body" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                    </div>
+
+                    <!-- Calendar Grid (Monthly view only) -->
+                    <div id="calendar-month-grid-wrap" class="overflow-x-auto -mx-1 px-1">
+                    <div class="grid grid-cols-8 gap-2 min-w-[640px]">
+                        <!-- Days of Week Header -->
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">MON</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">TUE</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">WED</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">THU</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">FRI</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">SAT</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">SUN</div>
+                        <div class="text-center text-xs font-mono font-semibold text-gray-400 py-1">WEEK</div>
+
+                        <!-- Calendar Day Cells (rendered by JS) -->
+                        <div id="calendar-cells" class="contents"></div>
+                    </div>
+                    </div>
+
+                    <!-- All Time / Yearly / Traded Months views (rendered by JS) -->
+                    <div id="calendar-alt-view" class="hidden space-y-2 pr-1"></div>
+                </div>
+
+                <!-- ==================== FOREX ACCOUNT (inside app shell): MT5 list on the left, full stats on the right ==================== -->
+                <div id="tab-forex-account" class="tab-content hidden" style="margin:-1.5rem !important;">
+                    <div class="flex" style="height: calc(100vh - 3.5rem);">
+                        <aside class="w-[23rem] max-w-[45vw] shrink-0 border-r border-aura-border bg-aura-card/60 flex flex-col">
+                            <div class="p-3 border-b border-aura-border">
+                                <button onclick="closeCfdAccountPage()" class="flex items-center gap-1.5 text-[11px] font-medium text-gray-400 hover:text-white transition">
+                                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> All accounts
+                                </button>
+                                <div class="flex items-center gap-3 mt-3">
+                                    <div id="cfd-header-icon" class="shrink-0"></div>
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <h1 id="cfd-header-name" class="text-sm font-bold text-white truncate"></h1>
+                                            <span id="cfd-header-badge" class="px-1.5 py-0.5 rounded text-[9px] font-mono border shrink-0"></span>
+                                        </div>
+                                        <p id="cfd-header-sub" class="text-[11px] text-gray-500 font-mono truncate"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="px-3 pt-3 pb-2 flex items-center justify-between">
+                                <h2 class="text-xs font-bold text-white">MT5 Accounts</h2>
+                                <span id="cfd-mt5-count" class="text-[10px] font-mono text-gray-500"></span>
+                            </div>
+                            <div id="fx-mt5-list" class="flex-1 overflow-y-auto px-2 pb-2 space-y-1.5"></div>
+                            <div class="p-3 border-t border-aura-border">
+                                <button onclick="openMt5Modal()" class="w-full px-3 py-2 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition flex items-center justify-center gap-1.5">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> New MT5 Account
+                                </button>
+                            </div>
+                        </aside>
+                        <section id="fx-stats-pane" class="flex-1 min-w-0 overflow-y-auto p-6 space-y-6"></section>
+                    </div>
+                </div>
+
+                <!-- ==================== 3A-2. STATS (placeholder, content to be added) ==================== -->
+                <div id="tab-accounts-stats" class="tab-content hidden space-y-4">
+                    <div class="glass-card rounded-xl border border-aura-border p-3 flex flex-wrap items-center gap-3 relative" style="z-index:30;">
+                        <div id="st-acc-wrap" class="relative">
+                            <button type="button" onclick="stToggleMenu(event)" class="flex items-center gap-2.5 pl-3 pr-2.5 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:border-blue-400/60 transition text-left" aria-label="Toggle strategy menu">
+                                <i data-lucide="layers" class="w-4 h-4 text-blue-400 shrink-0"></i>
+                                <span id="st-acc-label" class="text-xs font-semibold text-white"></span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 shrink-0"></i>
+                            </button>
+                            <div id="st-acc-menu" class="hidden absolute left-0 top-full mt-1.5 w-80 max-w-[90vw] max-h-80 overflow-y-auto rounded-lg shadow-2xl border border-aura-border" style="background-color:#14161f;"></div>
+                        </div>
+                        <div class="flex items-center gap-1" id="st-quick"></div>
+                        <div class="flex-1"></div>
+                        <div class="flex items-center gap-1 p-0.5 rounded-md border border-aura-border bg-aura-bg" id="st-periods"></div>
+                    </div>
+                    <div id="st-body" class="space-y-4"></div>
+                </div>
+
+                <!-- ==================== 3B. TRADING SESSIONS ==================== -->
+                <div id="tab-accounts-sessions" class="tab-content hidden space-y-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Trading Sessions</h2>
+                            <p class="text-xs text-gray-500">Which session every trade was taken in, and how it turned out. Times shown in <span id="ses-tz" class="text-gray-300"></span>.</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[11px] text-gray-500 uppercase tracking-widest">Pakistan Time (PKT)</div>
+                            <div id="session-local-time" class="text-xl font-bold font-mono text-white">--:--:-- --</div>
+                        </div>
+                    </div>
+                    <!-- Account picker (same dropdown as Journal) + range -->
+                    <div class="glass-card rounded-xl border border-aura-border p-3 flex flex-wrap items-center gap-3 relative" style="z-index:30;">
+                        <div id="ses-acc-wrap" class="relative">
+                            <button id="ses-acc-btn" type="button" onclick="sesToggleAccMenu(event)" class="flex items-center gap-2.5 pl-3 pr-2.5 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:border-blue-400/60 transition text-left max-w-full" aria-label="Toggle account menu">
+                                <i data-lucide="user-round" class="w-4 h-4 text-blue-400 shrink-0"></i>
+                                <span id="ses-acc-label" class="flex items-center gap-2 min-w-0 text-xs"></span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-300 shrink-0"></i>
+                            </button>
+                            <div id="ses-acc-menu" class="hidden absolute left-0 top-full mt-1.5 w-80 max-w-[90vw] max-h-80 overflow-y-auto rounded-lg shadow-2xl border border-aura-border" style="background-color:#14161f;"></div>
+                        </div>
+                        <div class="flex-1"></div>
+                        <div id="ses-ranges" class="flex gap-0.5 p-0.5 bg-aura-bg border border-aura-border rounded-md"></div>
+                    </div>
+                    <!-- ONE chart: session bars + every trade dot -->
+                    <div id="ses-chart" class="glass-card rounded-xl border border-aura-border p-4"></div>
+                    <div id="ses-summary" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Session Stats</h3>
+                        <p id="ses-stats-sub" class="text-xs text-gray-500 mb-3"></p>
+                        <div id="ses-stats" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+                    </div>
+                    <div id="ses-insights" class="glass-card rounded-xl border border-aura-border p-4"></div>
+                </div>
+
+                <!-- ==================== 4. STRATEGIES & RULES ==================== -->
+                <div id="tab-accounts-strategies" class="tab-content hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Strategies &amp; Rules</h2>
+                            <p class="text-xs text-gray-500">Define how you trade, then link each strategy to your accounts.</p>
+                        </div>
+                        <button onclick="openStrategyModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs flex items-center gap-1.5 font-medium transition shadow-md shadow-blue-600/20">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Strategy
+                        </button>
+                    </div>
+
+                    <div id="strategies-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
+
+                    <div id="strategies-empty" class="flex flex-col items-center justify-center text-center py-20 border border-dashed border-aura-border rounded-xl">
+                        <div class="w-12 h-12 rounded-full bg-aura-hover flex items-center justify-center mb-3">
+                            <i data-lucide="target" class="w-5 h-5 text-gray-500"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-white">No strategies yet</h3>
+                        <p class="text-xs text-gray-500 mt-1 max-w-xs">Create your first strategy with its steps and rules, and link it to the accounts you trade it on.</p>
+                        <button onclick="openStrategyModal()" class="mt-4 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs flex items-center gap-1.5 font-medium transition">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Strategy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ==================== 5. ACCOUNTS MANAGEMENT ==================== -->
+                <div id="tab-accounts-list" class="tab-content hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Managed Accounts</h2>
+                            <p class="text-xs text-gray-500">Every broker, prop firm, and binary account in one place.</p>
+                        </div>
+                        <button onclick="openAddAccountModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs flex items-center gap-1.5 font-medium transition shadow-md shadow-blue-600/20">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Account
+                        </button>
+                    </div>
+
+                    <div id="payout-alerts" class="space-y-2 mb-4 hidden" aria-live="polite"></div>
+
+                    <!-- Accounts Grid (3x3) -->
+                    <div id="accounts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
+
+                    <!-- Empty State -->
+                    <div id="accounts-empty" class="flex flex-col items-center justify-center text-center py-20 border border-dashed border-aura-border rounded-xl">
+                        <div class="w-12 h-12 rounded-full bg-aura-hover flex items-center justify-center mb-3">
+                            <i data-lucide="wallet" class="w-5 h-5 text-gray-500"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-white">No accounts yet</h3>
+                        <p class="text-xs text-gray-500 mt-1 max-w-xs">Add a prop firm, personal broker, or binary account to start tracking it here.</p>
+                        <button onclick="openAddAccountModal()" class="mt-4 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs flex items-center gap-1.5 font-medium transition">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Account
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ==================== 6. PSYCHOLOGY ==================== -->
+                <div id="tab-accounts-psychology" class="tab-content hidden space-y-6">
+                    <div id="psy-root" class="space-y-6"></div>
+                    <div id="psy-compliance"></div>
+                </div>
+
+                <!-- ==================== 7. NOTES ==================== -->
+                <div id="tab-accounts-notes" class="tab-content hidden space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)]">
+                        <!-- Notes List Sidebar -->
+                        <div class="glass-card rounded-xl border border-aura-border p-3 space-y-3 flex flex-col">
+                            <button onclick="createNewNote()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-medium flex items-center justify-center gap-1 transition shadow-md shadow-blue-600/20">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Note
+                            </button>
+
+                            <div class="relative">
+                                <i data-lucide="search" class="w-3.5 h-3.5 text-gray-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                                <input type="text" id="notes-search-input" oninput="renderNotesList()" placeholder="Search notes..." class="w-full bg-aura-bg border border-aura-border rounded-md pl-8 pr-2 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                            </div>
+
+                            <div id="notes-list" class="overflow-y-auto space-y-1.5 flex-1"></div>
+
+                            <div id="notes-count" class="text-[10px] font-mono text-gray-600 px-1 pt-1 border-t border-aura-border"></div>
+                        </div>
+
+                        <!-- Main Editor View -->
+                        <div class="lg:col-span-3 glass-card rounded-xl border border-aura-border flex flex-col overflow-hidden">
+
+                            <!-- Empty state: no note selected -->
+                            <div id="notes-editor-empty" class="hidden flex-1 flex-col items-center justify-center text-center p-10 space-y-3">
+                                <div class="w-14 h-14 rounded-full bg-aura-bg border border-aura-border flex items-center justify-center text-gray-500">
+                                    <i data-lucide="notebook-pen" class="w-7 h-7"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold text-white">No note selected</h3>
+                                    <p class="text-xs text-gray-500 mt-1">Pick a note on the left, or create a new one to start writing.</p>
+                                </div>
+                                <button onclick="createNewNote()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition">New Note</button>
+                            </div>
+
+                            <!-- Editor form -->
+                            <div id="notes-editor-form" class="hidden flex-1 flex-col p-6 space-y-4 overflow-hidden">
+                                <input type="text" id="note-title-input" oninput="markNoteDirty()" placeholder="Untitled Note" class="bg-transparent text-lg font-bold text-white focus:outline-none w-full placeholder-gray-600">
+
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 border-b border-aura-border pb-3">
+                                    <div class="flex items-center gap-1.5">
+                                        <span>Category:</span>
+                                        <input type="text" id="note-category-input" oninput="markNoteDirty()" placeholder="Uncategorized" class="bg-aura-bg border border-aura-border rounded px-2 py-0.5 text-[11px] text-gray-300 placeholder-gray-600 focus:outline-none focus:border-blue-500/50 w-36">
+                                    </div>
+                                    <div class="flex items-center gap-1.5 flex-wrap flex-1 min-w-[200px]">
+                                        <span class="shrink-0">Tags:</span>
+                                        <div id="note-tags-chips" class="flex flex-wrap items-center gap-1.5"></div>
+                                        <input type="text" id="note-tag-input" onkeydown="handleTagInputKeydown(event)" onblur="if(this.value.trim()){commitPendingTag();markNoteDirty();}" placeholder="+ add tag" class="bg-transparent text-[11px] text-gray-300 placeholder-gray-600 focus:outline-none w-24">
+                                    </div>
+                                    <span id="note-dirty-indicator" class="hidden items-center gap-1 text-amber-400 ml-auto shrink-0">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Unsaved changes
+                                    </span>
+                                </div>
+
+                                <textarea id="note-content-input" oninput="markNoteDirty()" class="w-full flex-1 bg-transparent text-xs text-gray-300 focus:outline-none resize-none leading-relaxed" placeholder="Write your market observations..."></textarea>
+
+                                <div class="flex items-center justify-between gap-2 border-t border-aura-border pt-4">
+                                    <span id="note-updated-label" class="text-[10px] font-mono text-gray-600"></span>
+                                    <div class="flex gap-2">
+                                        <button onclick="deleteCurrentNote()" class="px-3 py-1.5 bg-aura-bg border border-aura-border rounded text-xs text-gray-300 hover:text-aura-red hover:border-aura-red/30 transition">Delete</button>
+                                        <button id="note-save-btn" onclick="saveCurrentNote()" class="px-4 py-1.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-500 font-medium transition min-w-[96px]">Save Note</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== 8. CERTIFICATES ==================== -->
+                <div id="tab-accounts-monthly" class="tab-content hidden space-y-5">
+                    <div id="ms-root" class="space-y-5"></div>
+                </div>
+
+                <div id="tab-accounts-certificates" class="tab-content hidden space-y-6">
+                    <div class="flex items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-base font-bold text-white">Verified Milestones & Badges</h2>
+                            <p class="text-xs text-gray-500">Your certificates, funded-account passes and achievement proofs.</p>
+                        </div>
+                        <button onclick="openAddCertificateModal()" class="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-3 py-1.5 rounded-md transition shadow-md shadow-blue-600/20 shrink-0">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            Add Certificate
+                        </button>
+                    </div>
+
+                    <!-- Certificates Grid (3x3) -->
+                    <div id="certificates-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+                    <!-- Empty State -->
+                    <div id="certificates-empty" class="glass-card rounded-xl border border-dashed border-aura-border p-12 text-center hidden flex-col items-center justify-center space-y-3">
+                        <div class="w-14 h-14 rounded-full bg-aura-bg border border-aura-border flex items-center justify-center text-gray-500">
+                            <i data-lucide="award" class="w-7 h-7"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white">No certificates yet</h3>
+                            <p class="text-xs text-gray-500 mt-1">Click "Add Certificate" to upload your first achievement.</p>
+                        </div>
+                    </div>
+                </div>
+
+<div id="tab-settings" class="tab-content hidden">
+                    <div class="w-full space-y-6 pb-10">
+                        <div class="glass-card rounded-xl border border-aura-border p-5 space-y-1">
+                            <div class="flex items-center gap-2"><h2 class="text-sm font-bold text-white">AI API</h2><span id="set-ai-summary" class="geo-pill"></span></div>
+                            <p class="text-xs text-gray-500 leading-relaxed">Connect one or more AI providers, then choose which one answers for each feature. Keys are saved only in this browser (localStorage) and are sent only to the provider you pick — never to Tradely servers. Anyone with access to this browser profile could read them, so use keys with spending limits.</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 px-1">Feature routing</div>
+                            <div id="set-routes" class="glass-card rounded-xl border border-aura-border divide-y divide-aura-border"></div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="text-[11px] font-semibold uppercase tracking-wider text-gray-500 px-1">Providers</div>
+                            <div id="set-providers" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ==================== RIGHT-SIDE SLIDING PANEL (Days / Weeks stats) ==================== -->
+        <!-- Lives inside the main flex row so opening it pushes the calendar left instead of covering it -->
+        <div id="side-panel" class="h-full flex flex-col bg-[#0d0f16] border-l border-aura-border shrink-0">
+            <div class="flex items-center justify-between px-4 py-4 border-b border-aura-border shrink-0">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2 whitespace-nowrap"><i data-lucide="panel-right" class="w-4 h-4 text-blue-400"></i> Calendar Panel</h2>
+                <button onclick="closeSidePanel()" class="text-gray-400 hover:text-white shrink-0" aria-label="Close side panel"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="px-4 pt-3 shrink-0">
+                <div class="flex gap-2 text-xs font-semibold">
+                    <button id="side-panel-tab-days" onclick="switchSidePanelTab('days')" class="side-panel-tab-btn active flex-1 px-3 py-1.5 rounded-md border border-aura-border text-gray-300 transition whitespace-nowrap">Days</button>
+                    <button id="side-panel-tab-weeks" onclick="switchSidePanelTab('weeks')" class="side-panel-tab-btn flex-1 px-3 py-1.5 rounded-md border border-aura-border text-gray-300 transition whitespace-nowrap">Weeks</button>
+                </div>
+            </div>
+
+            <div id="side-panel-body" class="flex-1 overflow-y-auto px-4 py-3 space-y-2"></div>
+        </div>
+    </div>
+    <!-- ==================== MODALS & DRAWERS ==================== -->
+
+    <!-- COMMAND PALETTE (CMD + K) -->
+    <div id="command-palette" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-20">
+        <div class="glass-card w-full max-w-xl rounded-xl border border-aura-border shadow-2xl overflow-hidden space-y-2 p-3">
+            <div class="flex items-center px-3 border-b border-aura-border pb-2">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400 mr-2"></i>
+                <input type="text" placeholder="Type a command or search trades, strategies, notes..." class="bg-transparent w-full text-xs text-white focus:outline-none">
+            </div>
+            <div class="text-[10px] font-mono text-gray-500 px-3 uppercase tracking-wider">Quick Actions</div>
+            <div class="space-y-1 text-xs">
+                <button onclick="switchTab('accounts-journal'); toggleCommandPalette()" class="w-full text-left px-3 py-2 rounded hover:bg-aura-hover text-gray-300 flex items-center justify-between">
+                    <span>View Trading Journal</span>
+                    <kbd class="text-[9px] font-mono text-gray-500">GO JOURNAL</kbd>
+                </button>
+                <button onclick="switchTab('accounts-psychology'); toggleCommandPalette()" class="w-full text-left px-3 py-2 rounded hover:bg-aura-hover text-gray-300 flex items-center justify-between">
+                    <span>Psychology Assessment</span>
+                    <kbd class="text-[9px] font-mono text-gray-500">GO PSYCH</kbd>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRADE DETAILS DRAWER -->
+    <!-- Journal: entry popup (60% screenshot + annotation / 40% info) -->
+    <div id="jr-modal" role="dialog" aria-modal="true" aria-label="Journal entry" onclick="if(event.target===this)jrCloseModal()">
+        <div class="jr-dialog">
+            <!-- LEFT 60%: screenshot + annotation -->
+            <div class="jr-left">
+                <div id="jr-m-tools" class="jr-toolbar">
+                    <div class="jr-tgroup">
+                        <button type="button" class="jr-tool active" data-tool="pen" onclick="jrSetTool('pen')" title="Pen" aria-label="Pen tool"><i data-lucide="pencil"></i></button>
+                        <button type="button" class="jr-tool" data-tool="hl" onclick="jrSetTool('hl')" title="Highlighter" aria-label="Highlighter tool"><i data-lucide="highlighter"></i></button>
+                        <button type="button" class="jr-tool" data-tool="arrow" onclick="jrSetTool('arrow')" title="Arrow" aria-label="Arrow tool"><i data-lucide="move-up-right"></i></button>
+                        <button type="button" class="jr-tool" data-tool="rect" onclick="jrSetTool('rect')" title="Rectangle" aria-label="Rectangle tool"><i data-lucide="square"></i></button>
+                        <button type="button" class="jr-tool" data-tool="ellipse" onclick="jrSetTool('ellipse')" title="Circle" aria-label="Circle tool"><i data-lucide="circle"></i></button>
+                        <button type="button" class="jr-tool" data-tool="text" onclick="jrSetTool('text')" title="Text" aria-label="Text tool"><i data-lucide="type"></i></button>
+                        <button type="button" class="jr-tool" data-tool="eraser" onclick="jrSetTool('eraser')" title="Eraser (click a mark to remove it)" aria-label="Eraser (click a mark to remove it)"><i data-lucide="eraser"></i></button>
+                    </div>
+                    <div class="jr-tgroup" id="jr-m-colors">
+                        <button type="button" class="jr-swatch active" data-color="#ef4444" style="background:#ef4444" onclick="jrSetColor('#ef4444')" aria-label="Red"></button>
+                        <button type="button" class="jr-swatch" data-color="#facc15" style="background:#facc15" onclick="jrSetColor('#facc15')" aria-label="Yellow"></button>
+                        <button type="button" class="jr-swatch" data-color="#22c55e" style="background:#22c55e" onclick="jrSetColor('#22c55e')" aria-label="Green"></button>
+                        <button type="button" class="jr-swatch" data-color="#3b82f6" style="background:#3b82f6" onclick="jrSetColor('#3b82f6')" aria-label="Blue"></button>
+                        <button type="button" class="jr-swatch" data-color="#ffffff" style="background:#ffffff" onclick="jrSetColor('#ffffff')" aria-label="White"></button>
+                    </div>
+                    <div class="jr-tgroup" id="jr-m-sizes">
+                        <button type="button" class="jr-tool jr-size" data-size="0" onclick="jrSetSize(0)" title="Thin" aria-label="Thin stroke"><i style="width:4px;height:4px"></i></button>
+                        <button type="button" class="jr-tool jr-size active" data-size="1" onclick="jrSetSize(1)" title="Medium" aria-label="Medium stroke"><i style="width:7px;height:7px"></i></button>
+                        <button type="button" class="jr-tool jr-size" data-size="2" onclick="jrSetSize(2)" title="Thick" aria-label="Thick stroke"><i style="width:11px;height:11px"></i></button>
+                    </div>
+                    <div class="jr-tgroup">
+                        <button type="button" id="jr-m-undo" class="jr-tool" onclick="jrUndo()" title="Undo (Ctrl+Z)" aria-label="Undo (Ctrl+Z)"><i data-lucide="undo-2"></i></button>
+                        <button type="button" id="jr-m-redo" class="jr-tool" onclick="jrRedo()" title="Redo (Ctrl+Shift+Z)" aria-label="Redo (Ctrl+Shift+Z)"><i data-lucide="redo-2"></i></button>
+                        <button type="button" id="jr-m-clear" class="jr-tool" onclick="jrClearMarks()" title="Clear all marks" aria-label="Clear all marks"><i data-lucide="trash-2"></i></button>
+                    </div>
+                    <div class="jr-tgroup" style="margin-left:auto;">
+                        <button type="button" class="jr-tool" onclick="jrZoom(1/1.25)" title="Zoom out" aria-label="Zoom out"><i data-lucide="zoom-out"></i></button>
+                        <span id="jr-m-zoom" class="text-[11px] text-gray-500 mono" style="min-width:36px;text-align:center;">100%</span>
+                        <button type="button" class="jr-tool" onclick="jrZoom(1.25)" title="Zoom in" aria-label="Zoom in"><i data-lucide="zoom-in"></i></button>
+                        <button type="button" class="jr-tool" onclick="jrZoom(0)" title="Fit to window" aria-label="Fit to window"><i data-lucide="maximize"></i></button>
+                        <button type="button" class="jr-tool" onclick="jrDownload()" title="Download with marks" aria-label="Download with marks"><i data-lucide="download"></i></button>
+                    </div>
+                </div>
+                <div class="jr-stage-outer">
+                    <div id="jr-m-stage" class="jr-stage">
+                        <div id="jr-m-wrap" class="jr-wrap" style="display:none;">
+                            <img id="jr-m-img" alt="Trade screenshot" draggable="false">
+                            <canvas id="jr-m-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div id="jr-m-noshot" class="jr-empty-shot"><i data-lucide="image-off" class="w-8 h-8"></i><span>No screenshot saved for this entry</span></div>
+                    <button type="button" id="jr-m-prevshot" class="jr-nav-shot" style="left:12px;display:none;" onclick="jrStepShot(-1)" aria-label="Previous screenshot"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                    <button type="button" id="jr-m-nextshot" class="jr-nav-shot" style="right:12px;display:none;" onclick="jrStepShot(1)" aria-label="Next screenshot"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                </div>
+                <div id="jr-m-film" class="jr-film" style="display:none;"></div>
+            </div>
+
+            <!-- RIGHT 40%: all the info -->
+            <div class="jr-right">
+                <div class="flex items-center justify-between gap-3 px-5 py-3 border-b border-aura-border shrink-0">
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" id="jr-m-prev" class="jr-icon-btn" onclick="jrStepEntry(-1)" title="Previous entry (↑)" aria-label="Previous entry (↑)"><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
+                        <button type="button" id="jr-m-next" class="jr-icon-btn" onclick="jrStepEntry(1)" title="Next entry (↓)" aria-label="Next entry (↓)"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                        <span id="jr-m-pos" class="text-[11px] text-gray-500 mono ml-1.5"></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="jr-m-status" class="text-[11px] text-gray-500"></span>
+                        <button type="button" onclick="jrCloseModal()" class="jr-icon-btn" aria-label="Close"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <div id="jr-m-info" class="jr-right-body"></div>
+            </div>
+        </div>
+    </div>
+
+    
+<div id="trade-drawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-aura-card border-l border-aura-border z-50 transform translate-x-full transition-transform duration-300 p-6 overflow-y-auto space-y-6">
+        <div class="flex items-center justify-between border-b border-aura-border pb-4">
+            <h2 class="text-base font-bold text-white">Trade Details #TRD-8829</h2>
+            <button onclick="closeTradeDrawer()" class="text-gray-400 hover:text-white" aria-label="Close trade drawer"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+
+        <div class="space-y-4 text-xs">
+            <div class="flex justify-between items-center">
+                <span class="text-gray-400">Instrument</span>
+                <span class="font-bold text-white font-mono">XAUUSD</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-400">Outcome</span>
+                <span class="font-bold text-aura-green font-mono">+$4,080.00 (+2.8R)</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-400">Strategy</span>
+                <span class="text-gray-300">Liquidity Sweep</span>
+            </div>
+            <div class="p-3 bg-aura-bg rounded border border-aura-border space-y-2">
+                <div class="font-bold text-white">Trader Notes</div>
+                <p class="text-gray-400">Clean sweep of previous session highs. Displacement confirmed on 1m chart.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD CERTIFICATE MODAL -->
+    <div id="certificate-add-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border">
+                <h2 class="text-sm font-bold text-white">Add Certificate</h2>
+                <button onclick="closeAddCertificateModal()" class="text-gray-400 hover:text-white" aria-label="Close add certificate modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+                <!-- Image Upload -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Certificate Image</label>
+                    <label for="certificate-image-input" id="certificate-image-drop" class="mt-1.5 flex flex-col items-center justify-center gap-2 border border-dashed border-aura-border rounded-lg h-36 cursor-pointer hover:border-blue-500/50 hover:bg-aura-hover transition overflow-hidden bg-aura-bg">
+                        <i data-lucide="image-plus" class="w-6 h-6 text-gray-500"></i>
+                        <span class="text-[11px] text-gray-500">Click to upload image</span>
+                    </label>
+                    <input type="file" id="certificate-image-input" accept="image/*" class="hidden" onchange="handleCertificateImageSelect(event)">
+                </div>
+
+                <!-- Title -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Title</label>
+                    <input type="text" id="certificate-title-input" placeholder="e.g. FTMO Funded Trader" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                </div>
+
+                <!-- Subtitle -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Subtitle</label>
+                    <input type="text" id="certificate-subtitle-input" placeholder="e.g. Passed $100,000 Challenge" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Description</label>
+                    <textarea id="certificate-description-input" rows="3" placeholder="Add any extra detail about this certificate..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+
+                <p id="certificate-form-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button onclick="closeAddCertificateModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="saveCertificate()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save Certificate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN CERTIFICATE VIEWER -->
+    <div id="certificate-view-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden items-center justify-center p-4 md:p-10">
+        <button onclick="closeCertificateView()" class="absolute top-5 right-5 w-9 h-9 rounded-full bg-aura-card border border-aura-border flex items-center justify-center text-gray-300 hover:text-white hover:bg-aura-hover transition" aria-label="Close certificate view">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+        <button onclick="deleteCertificateFromView()" class="absolute top-5 right-16 w-9 h-9 rounded-full bg-aura-card border border-aura-border flex items-center justify-center text-gray-400 hover:text-aura-red hover:bg-aura-hover transition" aria-label="Delete certificate from view">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+
+        <div class="w-full max-w-3xl max-h-full flex flex-col items-center gap-5 overflow-y-auto py-8">
+            <img id="certificate-view-image" src="" alt="Certificate" class="max-h-[60vh] w-auto max-w-full rounded-xl border border-aura-border shadow-2xl object-contain bg-aura-bg">
+            <div class="text-center space-y-1.5 px-4">
+                <h2 id="certificate-view-title" class="text-lg font-bold text-white"></h2>
+                <p id="certificate-view-subtitle" class="text-sm text-gray-400"></p>
+                <p id="certificate-view-description" class="text-xs text-gray-500 max-w-xl mt-3 leading-relaxed"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD ACCOUNT MODAL -->
+    <!-- ==================== STRATEGY MODAL ==================== -->
+    <div id="strategy-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-xl border border-aura-border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border shrink-0">
+                <div class="flex items-center gap-1.5">
+                    <button id="st-back-btn" onclick="strategyGoBack()" class="hidden text-gray-400 hover:text-white p-1 -ml-1.5 rounded hover:bg-aura-hover transition" aria-label="Go back">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </button>
+                    <h2 id="st-title" class="text-sm font-bold text-white">New Strategy</h2>
+                </div>
+                <button onclick="closeStrategyModal()" class="text-gray-400 hover:text-white" aria-label="Close strategy modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="p-5 overflow-y-auto">
+                <!-- STEP 1: Market type -->
+                <div id="st-step-type" class="space-y-2.5">
+                    <button onclick="strategySelectType('binary')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0"><i data-lucide="zap" class="w-4 h-4 text-purple-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Binary</div>
+                            <div class="text-[11px] text-gray-500">Quotex, Pocket Option and other binary accounts</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                    <button onclick="strategySelectType('forex')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0"><i data-lucide="candlestick-chart" class="w-4 h-4 text-blue-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Forex</div>
+                            <div class="text-[11px] text-gray-500">Funded and personal CFD accounts</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                    <button onclick="strategySelectType('crypto')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0"><i data-lucide="bitcoin" class="w-4 h-4 text-amber-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Crypto</div>
+                            <div class="text-[11px] text-gray-500">Exchange accounts</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                </div>
+
+                <!-- STEP 2: Explain strategy, steps, rules -->
+                <div id="st-step-details" class="hidden space-y-4">
+                    <div>
+                        <label class="text-[11px] font-medium text-gray-400">Strategy name</label>
+                        <input type="text" id="st-field-name" maxlength="60" placeholder="e.g. Liquidity Sweep" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-gray-400">Explanation</label>
+                        <textarea id="st-field-desc" rows="3" placeholder="What is this strategy and when do you use it?" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-[11px] font-medium text-gray-400">Steps</label>
+                            <button onclick="strategyAddRow('steps')" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Add step</button>
+                        </div>
+                        <div id="st-steps-list" class="mt-1.5 space-y-2"></div>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-medium text-gray-400">Daily limits</label>
+                        <p class="text-[10px] text-gray-600 mt-0.5">Checked automatically against the trades you log in the Calendar. Leave blank to skip a limit.</p>
+                        <div id="st-limits-list" class="mt-2 space-y-2"></div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-[11px] font-medium text-gray-400">Rules</label>
+                            <button onclick="strategyAddRow('rules')" class="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> Add rule</button>
+                        </div>
+                        <div id="st-rules-list" class="mt-1.5 space-y-2"></div>
+                    </div>
+                    <div id="st-form-error" class="hidden text-[11px] text-aura-red"></div>
+                    <button onclick="strategyGoToLink()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition">Next</button>
+                </div>
+
+                <!-- STEP 3: Link accounts -->
+                <div id="st-step-link" class="hidden space-y-3">
+                    <p id="st-link-hint" class="text-[11px] text-gray-500"></p>
+                    <div id="st-link-list" class="space-y-2"></div>
+                    <button onclick="strategySave()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition">Save Strategy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-account-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-xl border border-aura-border shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border shrink-0">
+                <div class="flex items-center gap-1.5">
+                    <button id="add-account-back-btn" onclick="addAccountGoBack()" class="hidden text-gray-400 hover:text-white p-1 -ml-1.5 rounded hover:bg-aura-hover transition" aria-label="Go back">
+                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                    </button>
+                    <h2 id="add-account-title" class="text-sm font-bold text-white">Add Account</h2>
+                </div>
+                <button onclick="closeAddAccountModal()" class="text-gray-400 hover:text-white" aria-label="Close add account modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="p-5 overflow-y-auto">
+                <!-- STEP 1: Account Type -->
+                <div id="aa-step-type" class="space-y-2.5">
+                    <button onclick="selectAccountCategory('cfd')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0"><i data-lucide="candlestick-chart" class="w-4.5 h-4.5 text-blue-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">CFD</div>
+                            <div class="text-[11px] text-gray-500">Forex &amp; Futures — Funded or Personal</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                    <button onclick="selectAccountCategory('binary')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0"><i data-lucide="zap" class="w-4.5 h-4.5 text-purple-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Binary</div>
+                            <div class="text-[11px] text-gray-500">Quotex, Pocket Option, and more</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                    <button onclick="selectAccountCategory('crypto')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg/50 text-left cursor-not-allowed opacity-60">
+                        <div class="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0"><i data-lucide="bitcoin" class="w-4.5 h-4.5 text-amber-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Crypto</div>
+                            <div class="text-[11px] text-gray-500">Exchange accounts</div>
+                        </div>
+                        <span class="ml-auto px-1.5 py-0.5 rounded bg-aura-hover text-[9px] font-mono text-gray-400 border border-aura-border shrink-0">SOON</span>
+                    </button>
+                </div>
+
+                <!-- STEP 2 (CFD only): Funded / Personal -->
+                <div id="aa-step-cfd-subtype" class="hidden space-y-2.5">
+                    <button onclick="selectCfdSubtype('funded')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-aura-green/10 flex items-center justify-center shrink-0"><i data-lucide="shield-check" class="w-4.5 h-4.5 text-aura-green"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Funded</div>
+                            <div class="text-[11px] text-gray-500">A prop firm account</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                    <button onclick="selectCfdSubtype('personal')" class="w-full flex items-center gap-3 p-3.5 rounded-lg border border-aura-border bg-aura-bg hover:border-blue-500/50 hover:bg-aura-hover transition text-left">
+                        <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0"><i data-lucide="wallet" class="w-4.5 h-4.5 text-blue-400"></i></div>
+                        <div class="min-w-0">
+                            <div class="text-xs font-semibold text-white">Personal</div>
+                            <div class="text-[11px] text-gray-500">Your own broker account</div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-600 ml-auto shrink-0"></i>
+                    </button>
+                </div>
+
+                <!-- STEP 3 (CFD only): Prop Firm / Broker Selection -->
+                <div id="aa-step-provider" class="hidden space-y-3">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="aa-provider-search" oninput="renderProviderList()" placeholder="Search..." class="w-full bg-aura-bg border border-aura-border rounded-md pl-8 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+                    <div id="aa-provider-list" class="grid grid-cols-3 gap-2 max-h-72 overflow-y-auto pr-1"></div>
+                </div>
+
+                <!-- STEP 4: Details Form (shared) -->
+                <div id="aa-step-details" class="hidden space-y-4">
+                    <!-- Selected provider chip (CFD only) -->
+                    <div id="aa-selected-provider-chip" class="hidden items-center justify-between p-2.5 rounded-lg border border-aura-border bg-aura-bg">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div id="aa-selected-provider-icon" class="shrink-0"></div>
+                            <div class="min-w-0">
+                                <div id="aa-selected-provider-name" class="text-xs font-semibold text-white truncate"></div>
+                                <div id="aa-selected-provider-type" class="text-[10px] text-gray-500"></div>
+                            </div>
+                        </div>
+                        <button onclick="aaChangeProvider()" class="text-[10px] text-blue-400 hover:underline shrink-0 ml-2">Change</button>
+                    </div>
+
+                    <!-- Broker dropdown (Binary only) -->
+                    <div id="aa-binary-broker-field" class="hidden relative">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Broker</label>
+                        <button type="button" onclick="toggleBinaryBrokerDropdown()" id="aa-binary-broker-btn" class="mt-1.5 w-full flex items-center justify-between gap-2 bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white hover:border-blue-500/50 transition" aria-label="Toggle binary broker dropdown">
+                            <span id="aa-binary-broker-selected" class="flex items-center gap-2"></span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-500 shrink-0"></i>
+                        </button>
+                        <div id="aa-binary-broker-dropdown" class="hidden absolute z-10 mt-1.5 w-full bg-aura-card border border-aura-border rounded-md shadow-xl max-h-52 overflow-y-auto"></div>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Name</label>
+                        <input type="text" id="aa-field-name" placeholder="e.g. John Trader" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Nickname <span class="text-gray-600 normal-case">(optional)</span></label>
+                        <input type="text" id="aa-field-nickname" placeholder="e.g. Main Account" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+
+                    <div id="aa-field-id-wrap" class="hidden">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Account ID <span class="text-gray-600 normal-case">(optional)</span></label>
+                        <input type="text" id="aa-field-id" placeholder="e.g. 30481920" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+
+                    <div id="aa-field-owner-wrap" class="hidden">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Owner Name <span class="text-gray-600 normal-case">(optional)</span></label>
+                        <input type="text" id="aa-field-owner" placeholder="e.g. John Doe" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Email <span class="text-gray-600 normal-case">(optional)</span></label>
+                        <input type="email" id="aa-field-mail" placeholder="e.g. trader@mail.com" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+
+                    <div id="aa-field-balance-wrap" class="hidden">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Starting Balance</label>
+                        <div class="relative mt-1.5">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                            <input type="number" id="aa-field-balance" placeholder="1000" class="w-full bg-aura-bg border border-aura-border rounded-md pl-6 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                        </div>
+                    </div>
+
+                    <div id="aa-field-mode-wrap" class="hidden">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Account Mode</label>
+                        <div class="mt-1.5 grid grid-cols-2 gap-2">
+                            <button type="button" onclick="aaSetMode('demo')" id="aa-mode-demo-btn" class="px-3 py-2 rounded-md text-xs font-medium border border-aura-border bg-aura-bg text-gray-400 transition">Demo</button>
+                            <button type="button" onclick="aaSetMode('real')" id="aa-mode-real-btn" class="px-3 py-2 rounded-md text-xs font-medium border border-aura-border bg-aura-bg text-gray-400 transition">Real</button>
+                        </div>
+                    </div>
+
+                    <p id="aa-form-error" class="text-[11px] text-aura-red hidden"></p>
+                </div>
+
+                <!-- Crypto Coming Soon -->
+                <div id="aa-step-crypto" class="hidden flex-col items-center text-center py-8">
+                    <div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mb-3"><i data-lucide="bitcoin" class="w-5 h-5 text-amber-400"></i></div>
+                    <h3 class="text-sm font-semibold text-white">Crypto accounts coming soon</h3>
+                    <p class="text-xs text-gray-500 mt-1 max-w-xs mx-auto">We're still building out exchange integrations. Check back shortly.</p>
+                </div>
+
+                <!-- Final step (Funded CFD): account ready -->
+                <div id="aa-step-ready" class="hidden flex-col items-center text-center py-8">
+                    <div class="w-12 h-12 rounded-full bg-aura-green/10 flex items-center justify-center mb-3"><i data-lucide="check" class="w-6 h-6 text-aura-green"></i></div>
+                    <h3 class="text-sm font-semibold text-white">Account ready</h3>
+                    <p id="aa-ready-sub" class="text-xs text-gray-500 mt-1 max-w-xs mx-auto"></p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border shrink-0">
+                <button id="aa-cancel-btn" onclick="closeAddAccountModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button id="aa-create-btn" onclick="createAccount()" class="hidden px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE ACCOUNT CONFIRMATION MODAL -->
+    <!-- GENERIC CONFIRM MODAL (used by Notes + Certificates delete) -->
+    <div id="app-confirm-modal" onclick="if(event.target===this)appConfirmResolve(false)" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="p-5 space-y-3">
+                <div id="app-confirm-icon" class="w-10 h-10 rounded-full bg-aura-red/10 flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-aura-red"></i>
+                </div>
+                <h2 id="app-confirm-title" class="text-sm font-bold text-white"></h2>
+                <img id="app-confirm-preview" alt="" class="hidden w-full max-h-36 object-contain rounded-md border border-aura-border bg-aura-bg">
+                <p id="app-confirm-message" class="text-xs text-gray-400 leading-relaxed"></p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button id="app-confirm-cancel" onclick="appConfirmResolve(false)" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button id="app-confirm-ok" onclick="appConfirmResolve(true)" class="px-3 py-1.5 rounded-md text-xs font-medium bg-aura-red hover:bg-red-500 text-white transition shadow-md shadow-red-600/20">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-account-modal" onclick="if(event.target===this)closeDeleteAccountModal()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="p-5 space-y-3">
+                <div class="w-10 h-10 rounded-full bg-aura-red/10 flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-aura-red"></i>
+                </div>
+                <h2 class="text-sm font-bold text-white">Delete this account?</h2>
+                <p class="text-xs text-gray-400 leading-relaxed">You are about to permanently delete <span id="delete-account-name" class="text-white font-semibold"></span>. All of its trades, funds history and statistics will be removed. This action cannot be undone.</p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button onclick="closeDeleteAccountModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="confirmDeleteAccount()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-aura-red hover:bg-red-500 text-white transition shadow-md shadow-red-600/20">Yes, delete account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE STRATEGY MODAL -->
+    <div id="delete-strategy-modal" onclick="if(event.target===this)closeDeleteStrategyModal()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="p-5 space-y-3">
+                <div class="w-10 h-10 rounded-full bg-aura-red/10 flex items-center justify-center">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-aura-red"></i>
+                </div>
+                <h2 class="text-sm font-bold text-white">Delete this strategy?</h2>
+                <p class="text-xs text-gray-400 leading-relaxed">You are about to permanently delete <span id="delete-strategy-name" class="text-white font-semibold"></span>. Its steps, rules and account links will be removed. This action cannot be undone.</p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button onclick="closeDeleteStrategyModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="confirmDeleteStrategy()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-aura-red hover:bg-red-500 text-white transition shadow-md shadow-red-600/20">Yes, delete strategy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT ACCOUNT MODAL -->
+    <div id="edit-account-modal" onclick="if(event.target===this)closeEditAccountModal()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md max-h-[90vh] flex flex-col rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border shrink-0">
+                <h2 class="text-sm font-bold text-white">Edit Account</h2>
+                <button onclick="closeEditAccountModal()" class="text-gray-500 hover:text-white transition" aria-label="Close edit account modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 space-y-4 overflow-y-auto">
+                <div id="ea-broker-wrap" class="hidden">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Broker</label>
+                    <select id="ea-field-broker" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Name</label>
+                    <input type="text" id="ea-field-name" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Nickname <span class="text-gray-600 normal-case">(optional)</span></label>
+                    <input type="text" id="ea-field-nickname" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60">
+                </div>
+                <div id="ea-id-wrap" class="hidden">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Account ID <span class="text-gray-600 normal-case">(optional)</span></label>
+                    <input type="text" id="ea-field-id" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60">
+                </div>
+                <div id="ea-owner-wrap" class="hidden">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Owner Name <span class="text-gray-600 normal-case">(optional)</span></label>
+                    <input type="text" id="ea-field-owner" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Email <span class="text-gray-600 normal-case">(optional)</span></label>
+                    <input type="email" id="ea-field-mail" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60">
+                </div>
+                <div id="ea-balance-wrap" class="hidden">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Starting Balance</label>
+                    <div class="relative mt-1.5">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                        <input type="number" id="ea-field-balance" class="w-full bg-aura-bg border border-aura-border rounded-md pl-6 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/60">
+                    </div>
+                    <p class="text-[10px] text-gray-600 mt-1">Also updates the initial deposit in Funds History.</p>
+                </div>
+                <div id="ea-mode-wrap" class="hidden">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Account Mode</label>
+                    <div class="mt-1.5 grid grid-cols-2 gap-2">
+                        <button type="button" onclick="eaSetMode('demo')" id="ea-mode-demo-btn" class="px-3 py-2 rounded-md text-xs font-medium border border-aura-border bg-aura-bg text-gray-400 transition">Demo</button>
+                        <button type="button" onclick="eaSetMode('real')" id="ea-mode-real-btn" class="px-3 py-2 rounded-md text-xs font-medium border border-aura-border bg-aura-bg text-gray-400 transition">Real</button>
+                    </div>
+                </div>
+                <p id="ea-form-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border shrink-0">
+                <button onclick="closeEditAccountModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="saveEditedAccount()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALENDAR DAY ENTRY MODAL -->
+    <div id="calendar-day-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border">
+                <h2 id="calendar-day-modal-title" class="text-sm font-bold text-white">Log Trading Day</h2>
+                <button onclick="closeDayModal()" class="text-gray-400 hover:text-white" aria-label="Close day modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Net P&L ($)</label>
+                        <input type="number" step="0.01" id="calendar-pnl-input" placeholder="0.00" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Trades</label>
+                        <input type="number" min="0" step="1" id="calendar-trades-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Win</label>
+                        <input type="number" min="0" step="1" id="calendar-wins-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Loss</label>
+                        <input type="number" min="0" step="1" id="calendar-loss-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Refund</label>
+                        <input type="number" min="0" step="1" id="calendar-refund-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                </div>
+                <div id="calendar-forex-extra-fields" class="hidden grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">TP</label>
+                        <input type="number" min="0" step="1" id="calendar-tp-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">SL</label>
+                        <input type="number" min="0" step="1" id="calendar-sl-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">BE</label>
+                        <input type="number" min="0" step="1" id="calendar-be-input" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Screenshot(s)</label>
+                    <input type="file" id="bd-screenshot-input" accept="image/*" multiple class="hidden" onchange="handleBinaryScreenshotSelect(event)">
+                    <div id="bd-screenshots-list" class="mt-1.5 flex flex-wrap gap-2"></div>
+                    <div class="mt-2 flex items-center gap-2">
+                        <button type="button" onclick="document.getElementById('bd-screenshot-input').click()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium bg-aura-hover border border-aura-border text-gray-300 hover:text-white hover:border-blue-500/40 transition">
+                            <i data-lucide="image-plus" class="w-3.5 h-3.5"></i> Upload Screenshot
+                        </button>
+                        <button type="button" onclick="pasteScreenshotFromClipboard('binary')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium bg-aura-hover border border-aura-border text-gray-300 hover:text-white hover:border-blue-500/40 transition" title="Paste from clipboard (Ctrl+V)">
+                            <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i> Paste
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Note (optional)</label>
+                    <textarea id="calendar-note-input" rows="2" placeholder="Session context, key levels..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Mistakes (optional)</label>
+                    <textarea id="calendar-mistakes-input" rows="2" placeholder="What went wrong (if anything)..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between px-3 py-2 rounded-md bg-aura-bg border border-aura-border">
+                        <span class="text-xs text-gray-300">Rules followed?</span>
+                        <button type="button" id="bd-toggle-rules" onclick="tfToggleFlip('bd-toggle-rules')" data-on="true" class="tf-toggle w-9 h-5 rounded-full bg-aura-green/70 relative transition" aria-label="Flip card"><span class="tf-toggle-dot absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-white transition"></span></button>
+                    </div>
+                    <div class="flex items-center justify-between px-3 py-2 rounded-md bg-aura-bg border border-aura-border">
+                        <span class="text-xs text-gray-300">Emotional / revenge trade?</span>
+                        <button type="button" id="bd-toggle-emotional" onclick="tfToggleFlip('bd-toggle-emotional')" data-on="false" class="tf-toggle w-9 h-5 rounded-full bg-gray-700 relative transition" aria-label="Flip card"><span class="tf-toggle-dot absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition"></span></button>
+                    </div>
+                </div>
+                <p id="calendar-day-form-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+
+            <div class="flex items-center justify-between px-5 py-4 border-t border-aura-border">
+                <button id="calendar-day-delete-btn" onclick="deleteDayEntry()" class="hidden px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-aura-red hover:bg-aura-hover transition">Delete</button>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="closeDayModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                    <button onclick="saveDayEntry()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOREX: DAY TRADES POPUP ==================== -->
+    <div id="forex-day-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-xl border border-aura-border shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border shrink-0">
+                <div>
+                    <h2 id="forex-day-modal-title" class="text-sm font-bold text-white">Trading Day</h2>
+                    <p id="forex-day-modal-sub" class="text-[10px] text-gray-500 font-mono mt-0.5"></p>
+                </div>
+                <button onclick="closeForexDayModal()" class="text-gray-400 hover:text-white" aria-label="Close forex day modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div id="forex-day-summary" class="px-5 py-3 border-b border-aura-border shrink-0 grid grid-cols-3 gap-2 text-center"></div>
+            <div id="forex-day-trades-list" class="p-4 space-y-2 overflow-y-auto flex-1"></div>
+            <div class="flex items-center justify-between px-5 py-4 border-t border-aura-border shrink-0">
+                <button onclick="closeForexDayModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Close</button>
+                <button onclick="openAddTradeModal(forexDayModalDateKey)" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Trade
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOREX: ADD / EDIT TRADE MODAL ==================== -->
+    <div id="log-trade-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="log-trade-card glass-card w-full max-w-lg rounded-xl border border-aura-border shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border shrink-0">
+                <h2 id="tf-modal-title" class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4 text-blue-400"></i> Add Trade</h2>
+                <button onclick="closeAddTradeModal()" class="text-gray-400 hover:text-white" aria-label="Close add trade modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4 overflow-y-auto flex-1">
+                <!-- PNL -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">PNL — Change in Balance ($)</label>
+                    <input type="number" step="0.01" id="tf-pnl" placeholder="0.00" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+
+                <!-- TIME + SESSION -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Trade Time</label>
+                    <div class="mt-1.5 flex items-center gap-2">
+                        <select id="tf-hour" onchange="onTradeTimeChange()" onwheel="tfWheelSelect(event,'tf-hour')" class="bg-aura-bg border border-aura-border rounded-md px-2 py-2 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50"></select>
+                        <span class="text-gray-500 font-mono">:</span>
+                        <select id="tf-min" onchange="onTradeTimeChange()" onwheel="tfWheelSelect(event,'tf-min')" class="bg-aura-bg border border-aura-border rounded-md px-2 py-2 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50"></select>
+                        <select id="tf-ampm" onchange="onTradeTimeChange()" onwheel="tfWheelSelect(event,'tf-ampm')" class="bg-aura-bg border border-aura-border rounded-md px-2 py-2 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                        <span class="text-[10px] text-gray-600 ml-1">scroll or pick</span>
+                    </div>
+                    <div class="mt-1.5 flex items-center gap-1.5 text-[10px] font-mono">
+                        <i data-lucide="globe" class="w-3 h-3 text-blue-400"></i>
+                        <span class="text-gray-500">Session (Asia/Karachi, UTC+5):</span>
+                        <span id="tf-session-label" class="text-blue-400 font-semibold">—</span>
+                    </div>
+                </div>
+
+                <!-- PAIR SELECTION -->
+                <div class="relative">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Pair</label>
+                    <input type="text" id="tf-pair-search" placeholder="Search pair (e.g. XAUUSD, EURUSD)" autocomplete="off"
+                        oninput="renderPairMenu(this.value)" onfocus="renderPairMenu(this.value)"
+                        class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    <div id="tf-pair-menu" class="hidden absolute z-10 mt-1 w-full max-h-48 overflow-y-auto bg-aura-bg border border-aura-border rounded-md shadow-xl"></div>
+                </div>
+
+                <!-- PRICE LEVELS (optional) -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Entry / Stop loss / Take profit <span class="normal-case tracking-normal text-gray-600">(optional)</span></label>
+                    <div class="mt-1.5 grid grid-cols-3 gap-2">
+                        <input type="number" step="any" id="tf-entry" placeholder="Entry" class="w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                        <input type="number" step="any" id="tf-sl" placeholder="Stop loss" class="w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                        <input type="number" step="any" id="tf-tp" placeholder="Take profit" class="w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                </div>
+
+                <!-- SCREENSHOTS -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Screenshot(s)</label>
+                    <input type="file" id="tf-screenshot-input" accept="image/*" multiple class="hidden" onchange="handleTradeScreenshotSelect(event)">
+                    <div id="tf-screenshots-list" class="mt-1.5 flex flex-wrap gap-2"></div>
+                    <div class="mt-2 flex items-center gap-2">
+                        <button type="button" onclick="document.getElementById('tf-screenshot-input').click()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium bg-aura-hover border border-aura-border text-gray-300 hover:text-white hover:border-blue-500/40 transition">
+                            <i data-lucide="image-plus" class="w-3.5 h-3.5"></i> Upload Screenshot
+                        </button>
+                        <button type="button" onclick="pasteScreenshotFromClipboard('forex')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium bg-aura-hover border border-aura-border text-gray-300 hover:text-white hover:border-blue-500/40 transition" title="Paste from clipboard (Ctrl+V)">
+                            <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i> Paste
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OUTCOME -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Outcome (select one)</label>
+                    <div class="mt-1.5 grid grid-cols-3 gap-2">
+                        <button type="button" id="tf-outcome-tp" onclick="setTradeOutcome('tp')" class="tf-outcome-btn flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs font-semibold border border-aura-border text-gray-400 hover:border-aura-green/50 transition"><i data-lucide="check-square" class="w-3.5 h-3.5"></i> TP</button>
+                        <button type="button" id="tf-outcome-sl" onclick="setTradeOutcome('sl')" class="tf-outcome-btn flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs font-semibold border border-aura-border text-gray-400 hover:border-aura-red/50 transition"><i data-lucide="square" class="w-3.5 h-3.5"></i> SL</button>
+                        <button type="button" id="tf-outcome-be" onclick="setTradeOutcome('be')" class="tf-outcome-btn flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs font-semibold border border-aura-border text-gray-400 hover:border-aura-amber/50 transition"><i data-lucide="square" class="w-3.5 h-3.5"></i> BE</button>
+                    </div>
+                </div>
+
+                <!-- R:R TRACKER -->
+                <div class="rounded-lg border border-aura-border overflow-hidden">
+                    <label class="flex items-center justify-between px-3 py-2.5 bg-aura-hover cursor-pointer">
+                        <span class="text-xs font-semibold text-white">R:R Tracker <span class="text-gray-500 font-normal">(optional)</span></span>
+                        <span class="flex items-center gap-2">
+                            <span id="tf-rr-preview" class="font-mono font-bold text-sm hidden"></span>
+                            <input type="checkbox" id="tf-rr-enabled" onchange="toggleRRPanel()" class="w-4 h-4 accent-blue-600">
+                        </span>
+                    </label>
+                    <div id="tf-rr-panel" class="hidden p-3 space-y-3 bg-aura-bg/40">
+                        <!-- Target RR -->
+                        <div>
+                            <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Target RR</label>
+                            <div class="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                <input type="number" step="0.1" id="tf-rr-target" placeholder="e.g. 3" oninput="onRRTargetInput(this.value); updateRRPreview();" class="w-20 bg-aura-bg border border-aura-border rounded-md px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50">
+                                <button type="button" onclick="pickRRTarget(1)" class="tf-rr-preset px-2.5 py-1 rounded-md text-[11px] font-mono border border-aura-border text-gray-400 hover:text-white hover:border-blue-500/40">1:1</button>
+                                <button type="button" onclick="pickRRTarget(2)" class="tf-rr-preset px-2.5 py-1 rounded-md text-[11px] font-mono border border-aura-border text-gray-400 hover:text-white hover:border-blue-500/40">1:2</button>
+                                <button type="button" onclick="pickRRTarget(3)" class="tf-rr-preset px-2.5 py-1 rounded-md text-[11px] font-mono border border-aura-border text-gray-400 hover:text-white hover:border-blue-500/40">1:3</button>
+                                <button type="button" onclick="pickRRTarget(4)" class="tf-rr-preset px-2.5 py-1 rounded-md text-[11px] font-mono border border-aura-border text-gray-400 hover:text-white hover:border-blue-500/40">1:4</button>
+                            </div>
+                        </div>
+                        <!-- Lot size -->
+                        <div>
+                            <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Lot Size</label>
+                            <input type="number" step="0.01" id="tf-lot-size" placeholder="e.g. 3" oninput="updateRRPreview()" class="mt-1.5 w-28 bg-aura-bg border border-aura-border rounded-md px-2 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-blue-500/50">
+                        </div>
+                        <!-- RF -->
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="tf-rf-enabled" onchange="toggleRFFields()" class="w-3.5 h-3.5 accent-blue-600">
+                            <span class="text-xs text-gray-300">Did you move to Risk Free (RF)?</span>
+                        </label>
+                        <div id="tf-rf-fields" class="hidden pl-5 space-y-2.5">
+                            <div>
+                                <label class="text-[10px] text-gray-500">At target, closed</label>
+                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <input type="number" id="tf-rf-target-pct" placeholder="%" oninput="updateRRPreview()" class="w-16 bg-aura-bg border border-aura-border rounded-md px-2 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-blue-500/50">
+                                    <span class="text-[10px] text-gray-500">% pe</span>
+                                    <button type="button" onclick="setRFField('tf-rf-target-pct',25)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">25%</button>
+                                    <button type="button" onclick="setRFField('tf-rf-target-pct',33)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">33%</button>
+                                    <button type="button" onclick="setRFField('tf-rf-target-pct',50)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">50%</button>
+                                    <button type="button" onclick="setRFField('tf-rf-target-pct',75)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">75%</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-gray-500">Close</label>
+                                <div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                                    <input type="number" id="tf-rf-lots-pct" placeholder="%" oninput="updateRRPreview()" class="w-16 bg-aura-bg border border-aura-border rounded-md px-2 py-1 text-[11px] text-white font-mono focus:outline-none focus:border-blue-500/50">
+                                    <span class="text-[10px] text-gray-500">% of lots</span>
+                                    <button type="button" onclick="setRFField('tf-rf-lots-pct',25)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">25%</button>
+                                    <button type="button" onclick="setRFField('tf-rf-lots-pct',33)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">33%</button>
+                                    <button type="button" onclick="setRFField('tf-rf-lots-pct',50)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">50%</button>
+                                    <button type="button" onclick="setRFField('tf-rf-lots-pct',75)" class="px-2 py-0.5 rounded text-[10px] font-mono border border-aura-border text-gray-400 hover:text-white">75%</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- BE trail flag -->
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="tf-be-moved" class="w-3.5 h-3.5 accent-blue-600">
+                            <span class="text-xs text-gray-300">Did you trail the SL to breakeven?</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- SETUP -->
+                <div class="rounded-md border border-aura-border bg-aura-bg/40 p-3 space-y-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="tf-my-setup" onchange="tfSetupToggle()" class="w-4 h-4 accent-blue-600">
+                        <span class="text-xs text-gray-200 font-medium">Is this My Setup?</span>
+                    </label>
+                    <div id="tf-setup-wrap" class="hidden">
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Setup quality</label>
+                        <div class="grid grid-cols-4 gap-2 mt-1.5" id="tf-setup-grades">
+                            <button type="button" data-g="A+" onclick="tfSetGrade('A+')" class="tf-grade-btn px-2 py-2 rounded-md border border-aura-border bg-aura-bg text-xs font-mono font-bold text-gray-400 transition">A+</button>
+                            <button type="button" data-g="A" onclick="tfSetGrade('A')" class="tf-grade-btn px-2 py-2 rounded-md border border-aura-border bg-aura-bg text-xs font-mono font-bold text-gray-400 transition">A</button>
+                            <button type="button" data-g="B+" onclick="tfSetGrade('B+')" class="tf-grade-btn px-2 py-2 rounded-md border border-aura-border bg-aura-bg text-xs font-mono font-bold text-gray-400 transition">B+</button>
+                            <button type="button" data-g="B" onclick="tfSetGrade('B')" class="tf-grade-btn px-2 py-2 rounded-md border border-aura-border bg-aura-bg text-xs font-mono font-bold text-gray-400 transition">B</button>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1.5">Psychology: 2+ B/B+ setups in a day = -2 pts. 3+ A/A+ setups in a day = -2 pts.</p>
+                    </div>
+                </div>
+
+                <!-- NOTES / MISTAKES / REASON -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Notes</label>
+                    <textarea id="tf-notes" rows="2" placeholder="Session context, key levels..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Mistakes</label>
+                    <textarea id="tf-mistakes" rows="2" placeholder="What went wrong (if anything)..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Reason of Trade</label>
+                    <textarea id="tf-reason" rows="2" placeholder="Why did you take this trade..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+
+                <!-- TOGGLES -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between px-3 py-2 rounded-md bg-aura-bg border border-aura-border">
+                        <span class="text-xs text-gray-300">Rules followed?</span>
+                        <button type="button" id="tf-toggle-rules" onclick="tfToggleFlip('tf-toggle-rules')" data-on="true" class="tf-toggle w-9 h-5 rounded-full bg-aura-green/70 relative transition" aria-label="Flip card"><span class="tf-toggle-dot absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-white transition"></span></button>
+                    </div>
+                    <div class="flex items-center justify-between px-3 py-2 rounded-md bg-aura-bg border border-aura-border">
+                        <span class="text-xs text-gray-300">Emotional / revenge trade?</span>
+                        <button type="button" id="tf-toggle-emotional" onclick="tfToggleFlip('tf-toggle-emotional')" data-on="false" class="tf-toggle w-9 h-5 rounded-full bg-gray-700 relative transition" aria-label="Flip card"><span class="tf-toggle-dot absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition"></span></button>
+                    </div>
+                </div>
+
+                <!-- TAGS -->
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Tags</label>
+                    <div id="tf-tags-list" class="mt-1.5 flex flex-wrap gap-1.5"></div>
+                    <input type="text" id="tf-tag-input" placeholder="Type a tag and press Enter" onkeydown="onTagInputKeydown(event)" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                </div>
+
+                <p id="tf-form-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+
+            <div class="flex items-center justify-between px-5 py-4 border-t border-aura-border shrink-0">
+                <button id="tf-delete-btn" onclick="deleteTradeFromForm()" class="hidden px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-aura-red hover:bg-aura-hover transition">Delete Trade</button>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="closeAddTradeModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                    <button onclick="saveTradeForm()" class="px-4 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save Trade</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SCREENSHOT MARKUP MODAL ==================== -->
+    <div id="markup-modal" class="fixed inset-0 bg-black/85 z-[60] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-2xl rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-aura-border">
+                <h2 class="text-sm font-bold text-white">Markup Screenshot</h2>
+                <button onclick="closeMarkupModal()" class="text-gray-400 hover:text-white" aria-label="Close markup modal"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="flex items-center gap-2 px-4 py-2 border-b border-aura-border flex-wrap">
+                <input type="color" id="markup-color" value="#ef4444" class="w-7 h-7 rounded bg-transparent border-0 cursor-pointer">
+                <button onclick="setMarkupTool('pen')" id="markup-tool-pen" class="markup-tool-btn px-2.5 py-1 rounded text-[11px] font-medium border border-aura-border text-white">Pen</button>
+                <button onclick="setMarkupTool('rect')" id="markup-tool-rect" class="markup-tool-btn px-2.5 py-1 rounded text-[11px] font-medium border border-aura-border text-gray-400">Rectangle</button>
+                <button onclick="setMarkupTool('arrow')" id="markup-tool-arrow" class="markup-tool-btn px-2.5 py-1 rounded text-[11px] font-medium border border-aura-border text-gray-400">Arrow</button>
+                <button onclick="markupUndo()" class="px-2.5 py-1 rounded text-[11px] font-medium border border-aura-border text-gray-400 hover:text-white">Undo</button>
+                <button onclick="markupClear()" class="px-2.5 py-1 rounded text-[11px] font-medium border border-aura-border text-gray-400 hover:text-white">Clear</button>
+            </div>
+            <div class="p-3 bg-black/40 flex items-center justify-center overflow-auto" style="max-height:65vh;">
+                <canvas id="markup-canvas" class="max-w-full cursor-crosshair rounded"></canvas>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-4 py-3 border-t border-aura-border">
+                <button onclick="closeMarkupModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="saveMarkup()" class="px-4 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MT5 ACCOUNT POPUP -->
+    <div id="mt5-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-xl border border-aura-border shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border shrink-0">
+                <h2 id="mt5-modal-title" class="text-sm font-bold text-white">New MT5 Account</h2>
+                <button onclick="closeMt5Modal()" class="text-gray-400 hover:text-white" aria-label="Close MT5 account window"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4">
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Name</label>
+                    <input type="text" id="mt5-name" placeholder="e.g. MT5 #1" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Size</label>
+                    <div class="relative mt-1.5">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                        <input type="number" id="mt5-size" placeholder="10000" oninput="mt5HighlightSize()" class="w-full bg-aura-bg border border-aura-border rounded-md pl-6 pr-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+                    <div id="mt5-size-chips" class="flex flex-wrap gap-1.5 mt-2"></div>
+                </div>
+                <div id="mt5-phases-wrap">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Phases</label>
+                    <select id="mt5-phases-select" onchange="mt5OnPhasesChange()" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50">
+                        <option value="1">Single Phase</option>
+                        <option value="2">2 Phase</option>
+                        <option value="3">3 Phase</option>
+                        <option value="instant">Instant</option>
+                    </select>
+                    <p id="mt5-phases-hint" class="text-[10px] text-gray-500 mt-1.5"></p>
+                    <label class="mt-3 block text-[10px] font-mono uppercase tracking-wider text-gray-500">Running phase</label>
+                    <select id="mt5-running-select" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50"></select>
+                    <p class="text-[10px] text-gray-500 mt-1.5">The phase this account is trading in right now. Every phase keeps its own calendar and stats.</p>
+                </div>
+                <div id="mt5-tpl-wrap" class="rounded-lg border border-aura-border bg-aura-bg/40 p-3 space-y-2">
+                    <div class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Rule templates</div>
+                    <div class="flex gap-2"><select id="mt5-tpl-select" aria-label="Rule template" class="flex-1 min-w-0 bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50"></select>
+                        <button type="button" id="mt5-tpl-apply" onclick="mt5TplApply()" class="px-3 py-2 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition">Apply</button>
+                        <button type="button" id="mt5-tpl-del" onclick="mt5TplDelete()" class="px-3 py-2 rounded-md text-xs border border-aura-border text-gray-400 hover:text-aura-red transition">Delete</button></div>
+                    <div class="flex gap-2"><input type="text" id="mt5-tpl-name" maxlength="40" placeholder="Save the rules below as… (e.g. FTMO 2-step)" aria-label="New template name" class="flex-1 min-w-0 bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                        <button type="button" onclick="mt5TplSave()" class="px-3 py-2 rounded-md text-xs font-medium border border-violet-500/40 text-violet-300 hover:bg-violet-500/10 transition">Save template</button></div>
+                    <p class="text-[10px] text-gray-500">Applying a template fills the phase type and every rule field, so you only need to check them.</p>
+                </div>
+                <div id="mt5-phase-blocks" class="space-y-3"></div>
+                <div id="mt5-personal-wrap" class="hidden">
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Leverage <span class="text-gray-600 normal-case">(optional)</span></label>
+                    <input type="text" id="mt5-personal-leverage" placeholder="e.g. 1:500" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Login ID <span class="text-gray-600 normal-case">(optional)</span></label>
+                        <input type="text" id="mt5-login" placeholder="e.g. 30481920" autocomplete="off" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Password <span class="text-gray-600 normal-case">(optional)</span></label>
+                        <div class="relative mt-1.5">
+                            <input type="password" id="mt5-password" autocomplete="new-password" class="w-full bg-aura-bg border border-aura-border rounded-md pl-3 pr-8 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50">
+                            <button type="button" onclick="const i=document.getElementById('mt5-password'); i.type = i.type==='password' ? 'text' : 'password'" class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white" aria-label="Consistency rule"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <p id="mt5-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border shrink-0">
+                <button onclick="closeMt5Modal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="saveMt5Account()" id="mt5-save-btn" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== BINARY ACCOUNT — FULL DETAIL PAGE ==================== -->
+    <div id="binary-account-page" class="fixed inset-0 z-40 hidden flex-col bg-aura-bg overflow-y-auto">
+        <div class="sticky top-0 z-10 bg-aura-bg/95 backdrop-blur border-b border-aura-border px-4 md:px-8 py-4 flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3 min-w-0">
+                <button onclick="closeBinaryAccountPage()" class="w-9 h-9 rounded-lg border border-aura-border flex items-center justify-center text-gray-400 hover:text-white hover:bg-aura-hover transition shrink-0" aria-label="Close account page">
+                    <i data-lucide="arrow-left" class="w-4.5 h-4.5"></i>
+                </button>
+                <div id="ba-header-icon" class="shrink-0"></div>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h1 id="ba-header-name" class="text-lg font-bold text-white truncate"></h1>
+                        <span id="ba-header-mode" class="px-1.5 py-0.5 rounded text-[10px] font-mono border shrink-0"></span>
+                    </div>
+                    <p id="ba-header-sub" class="text-xs text-gray-500 font-mono truncate"></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="consOpen('ba')" class="px-3.5 py-2 rounded-md text-xs sm:text-sm font-semibold bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white transition shadow-md shadow-violet-600/20 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-4 h-4"></i> AI Coach</button>
+                <button onclick="baOpenFundsModal()" class="px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium border border-aura-border text-gray-300 hover:bg-aura-hover transition flex items-center gap-1.5">
+                    <i data-lucide="wallet" class="w-4 h-4"></i> Deposit / Withdraw
+                </button>
+                <button onclick="baGoLogTrade()" class="px-3.5 py-2 rounded-md text-xs sm:text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20 flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Go Log Trade
+                </button>
+            </div>
+        </div>
+
+        <div class="px-4 md:px-8 lg:px-12 py-6 space-y-6 w-full">
+            <!-- MAIN OVERVIEW CARD -->
+            <div class="ba-anim glass-card rounded-2xl border border-aura-border p-5 sm:p-6 md:p-8">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-10">
+                    <div>
+                        <div class="text-xs md:text-sm font-mono uppercase tracking-wider text-gray-500">Current Balance</div>
+                        <div id="ba-main-current-balance" class="text-3xl md:text-4xl font-bold font-mono text-white mt-2"></div>
+                    </div>
+                    <div class="sm:border-l sm:border-aura-border sm:pl-8">
+                        <div class="text-xs md:text-sm font-mono uppercase tracking-wider text-gray-500">Total PNL</div>
+                        <div id="ba-main-total-pnl" class="text-3xl md:text-4xl font-bold font-mono mt-2"></div>
+                    </div>
+                    <div class="sm:border-l sm:border-aura-border sm:pl-8">
+                        <div class="text-xs md:text-sm font-mono uppercase tracking-wider text-gray-500">Starting Balance</div>
+                        <div id="ba-main-starting-balance" class="text-3xl md:text-4xl font-bold font-mono text-gray-300 mt-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PERIOD FILTER -->
+            <div id="ba-period-buttons" class="ba-anim flex flex-wrap items-center gap-2"></div>
+
+            <!-- PERFORMANCE STATS + TARGETS -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                <div class="ba-anim xl:col-span-2">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2"><i data-lucide="bar-chart-3" class="w-5 h-5 text-blue-400"></i> Performance Stats</h2>
+                        <span id="ba-stats-subtitle" class="text-xs text-gray-500 font-mono"></span>
+                    </div>
+                    <div id="ba-stats-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+                </div>
+
+                <!-- TARGETS -->
+                <div id="ba-targets-panel" class="ba-anim"></div>
+            </div>
+
+            <!-- EQUITY CURVE + STRATEGY AND RULES (same 3-col grid as Stats/Targets so the right card matches Targets' width) -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                <div class="ba-anim xl:col-span-2 glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-base font-bold text-white">Equity Curve</h2>
+                        <span id="ba-equity-subtitle" class="text-xs text-gray-500 font-mono"></span>
+                    </div>
+                    <div class="h-80 md:h-[26rem]"><canvas id="ba-equity-chart"></canvas></div>
+                </div>
+<div id="ba-strategy-panel" class="ba-anim relative"></div>
+            </div>
+
+            <!-- CALENDAR HEATMAP -->
+            <div class="ba-anim glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-bold text-white">Calendar Heatmap</h2>
+                    <div class="flex items-center gap-2">
+                        <button onclick="baHeatmapPrevYear()" class="w-7 h-7 rounded border border-aura-border text-gray-400 hover:text-white hover:bg-aura-hover flex items-center justify-center" aria-label="Previous year"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <span id="ba-heatmap-year" class="text-sm font-mono text-gray-300 w-10 text-center"></span>
+                        <button onclick="baHeatmapNextYear()" class="w-7 h-7 rounded border border-aura-border text-gray-400 hover:text-white hover:bg-aura-hover flex items-center justify-center" aria-label="Next year"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <p id="ba-heatmap-subtitle" class="text-xs text-gray-500 font-mono mb-3"></p>
+                <div id="ba-heatmap" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+            </div>
+
+            <!-- DRAWDOWN -->
+            <div class="ba-anim glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-base font-bold text-white">Drawdown</h2>
+                    <span id="ba-drawdown-subtitle" class="text-xs text-aura-red font-mono"></span>
+                </div>
+                <div class="h-40 md:h-48"><canvas id="ba-drawdown-chart"></canvas></div>
+            </div>
+
+            <!-- DAY & HOUR WIN RATE -->
+            <div class="ba-anim">
+                <h2 class="text-base font-bold text-white mb-3">Day &amp; Hour Win Rate</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-3">By Day of Week</h3>
+                        <div id="ba-day-of-week" class="space-y-2"></div>
+                    </div>
+                    <div class="glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-3">By Hour of Day (PKT)</h3>
+                        <div id="ba-hour-of-day" class="text-sm text-gray-500 text-center py-8">No trades logged yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WIN VS LOSS DAYS + MONTHLY PNL BARS -->
+            <div class="ba-anim grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                    <h3 class="text-sm font-semibold text-gray-400 mb-3">Win vs Loss Days</h3>
+                    <div class="h-52 md:h-60"><canvas id="ba-winloss-chart"></canvas></div>
+                    <div id="ba-winloss-legend" class="flex items-center justify-center gap-4 mt-3 text-xs font-mono"></div>
+                </div>
+                <div class="glass-card p-4 md:p-5 rounded-xl border border-aura-border">
+                    <h3 class="text-sm font-semibold text-gray-400 mb-3">Monthly PnL Bars</h3>
+                    <div class="h-52 md:h-60"><canvas id="ba-monthly-chart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- TRADED DAYS + FUNDS HISTORY (70/30 row) -->
+            <div class="ba-anim grid grid-cols-1 lg:grid-cols-10 gap-4 items-start">
+                <!-- TRADED DAYS (70%) -->
+                <div class="lg:col-span-7 min-w-0">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-base font-bold text-white">Traded Days</h2>
+                        <span id="ba-traded-days-subtitle" class="text-xs text-gray-500 font-mono"></span>
+                    </div>
+                    <div id="ba-traded-days-list" class="space-y-1.5 max-h-[560px] overflow-y-auto pr-1"></div>
+                </div>
+
+                <!-- FUNDS HISTORY (30%) -->
+                <div class="lg:col-span-3 min-w-0">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-base font-bold text-white">Funds History</h2>
+                        <button onclick="baOpenFundsModal()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+                    </div>
+                    <div id="ba-funds-history" class="space-y-1.5 max-h-[560px] overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BA: Log Trade Day Modal -->
+    <div id="ba-day-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="calendar-plus" class="w-4 h-4 text-blue-400"></i> Log Trade Day</h2>
+                <button onclick="baCloseDayModal()" class="text-gray-400 hover:text-white" aria-label="Close day window"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Date</label>
+                    <input type="date" id="ba-day-date" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <p id="ba-day-entries-hint" class="hidden text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-md px-2.5 py-1.5">This day has individual trades logged — the numbers below are auto-calculated from them. Edit the trades themselves in the Traded Days list.</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Trades</label>
+                        <input type="number" min="0" step="1" id="ba-day-trades" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Wins</label>
+                        <input type="number" min="0" step="1" id="ba-day-wins" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Refunds</label>
+                        <input type="number" min="0" step="1" id="ba-day-refunds" placeholder="0" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Net PnL ($)</label>
+                        <input type="number" step="0.01" id="ba-day-pnl" placeholder="0.00" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Note (optional)</label>
+                    <textarea id="ba-day-note" rows="2" placeholder="Mistakes, context, key levels..." class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 resize-none"></textarea>
+                </div>
+                <p id="ba-day-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+            <div class="flex items-center justify-between px-5 py-4 border-t border-aura-border">
+                <button id="ba-day-delete-btn" onclick="baDeleteDayEntry()" class="hidden px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-aura-red hover:bg-aura-hover transition">Delete</button>
+                <div class="flex gap-2 ml-auto">
+                    <button onclick="baCloseDayModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                    <button onclick="baSaveDayEntry()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- MT5: personalised delete confirmation -->
+    <div id="mt5-delete-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[75] hidden items-center justify-center p-4" onclick="closeMt5Delete()">
+        <div class="glass-card w-full max-w-md rounded-2xl border border-aura-red/30 shadow-2xl overflow-hidden" onclick="event.stopPropagation()" style="box-shadow:0 20px 60px -20px rgba(239,68,68,.35)">
+            <div class="px-5 pt-5 pb-4 flex items-start gap-3">
+                <div class="w-11 h-11 rounded-xl bg-aura-red/10 border border-aura-red/30 flex items-center justify-center shrink-0"><i data-lucide="trash-2" class="w-5 h-5 text-aura-red"></i></div>
+                <div class="min-w-0">
+                    <h3 id="mt5-del-title" class="text-base font-bold text-white">Delete account?</h3>
+                    <p id="mt5-del-sub" class="text-xs text-gray-400 mt-1 leading-relaxed"></p>
+                </div>
+            </div>
+            <div id="mt5-del-stats" class="px-5 grid grid-cols-3 gap-2"></div>
+            <div class="px-5 pt-4">
+                <div class="text-[11px] text-aura-red/90 bg-aura-red/10 border border-aura-red/20 rounded-lg px-3 py-2 flex items-start gap-2"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i><span id="mt5-del-warn">This permanently removes the account and every trade, screenshot and calendar entry. It cannot be undone.</span></div>
+                <label class="block text-[10px] font-mono uppercase tracking-wider text-gray-500 mt-4">Type <span id="mt5-del-name-hint" class="text-white normal-case"></span> to confirm</label>
+                <input id="mt5-del-input" type="text" autocomplete="off" oninput="mt5DeleteCheck()" onkeydown="if(event.key==='Enter')mt5DeleteConfirm()" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-aura-red/60 font-mono">
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 mt-2">
+                <button onclick="closeMt5Delete()" class="px-3.5 py-2 rounded-md text-xs font-medium bg-aura-hover border border-aura-border text-gray-300 hover:text-white">Keep account</button>
+                <button id="mt5-del-btn" onclick="mt5DeleteConfirm()" disabled class="px-3.5 py-2 rounded-md text-xs font-semibold bg-aura-red text-white flex items-center gap-1.5 opacity-40 cursor-not-allowed transition"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Delete forever</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FX: MT5 Trade detail popup -->
+    <div id="fx-trade-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[70] hidden items-center justify-center p-4" onclick="fxCloseTradeModal()">
+        <div class="glass-card w-full max-w-2xl max-h-[90vh] rounded-2xl border border-aura-border shadow-2xl overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+            <div id="fx-trade-modal-head" class="px-5 py-4 border-b border-aura-border flex items-center justify-between gap-3"></div>
+            <div id="fx-trade-modal-body" class="p-5 overflow-y-auto space-y-5"></div>
+        </div>
+    </div>
+    <!-- FX: screenshot lightbox -->
+    <div id="fx-shot-lightbox" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[80] hidden items-center justify-center p-4" onclick="fxCloseShot()">
+        <img id="fx-shot-img" alt="Screenshot preview" src="" class="max-w-full max-h-full rounded-lg border border-aura-border shadow-2xl" onclick="event.stopPropagation()">
+        <button onclick="event.stopPropagation(); fxCloseShot()" class="absolute top-4 right-4 text-gray-300 hover:text-white" aria-label="Close screenshot"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <button id="fx-shot-prev" onclick="event.stopPropagation(); fxStepShot(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-aura-border text-gray-300 hover:text-white flex items-center justify-center" aria-label="Step through screenshots"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+        <button id="fx-shot-next" onclick="event.stopPropagation(); fxStepShot(1)" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-aura-border text-gray-300 hover:text-white flex items-center justify-center" aria-label="Step through screenshots"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+        <div id="fx-shot-count" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs font-mono text-gray-300 bg-black/60 px-3 py-1 rounded-full"></div>
+    </div>
+
+    <!-- BA: Trade Screenshot Lightbox -->
+    <div id="ba-shot-lightbox" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[60] hidden items-center justify-center p-4" onclick="baCloseShotLightbox()">
+        <img id="ba-shot-lightbox-img" alt="Screenshot preview" src="" class="max-w-full max-h-full rounded-lg border border-aura-border shadow-2xl" onclick="event.stopPropagation()">
+        <button onclick="baCloseShotLightbox()" class="absolute top-4 right-4 text-gray-300 hover:text-white" aria-label="Close screenshot"><i data-lucide="x" class="w-6 h-6"></i></button>
+    </div>
+
+    <!-- BA: Deposit / Withdraw Modal -->
+    <div id="ba-funds-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="wallet" class="w-4 h-4 text-blue-400"></i> Deposit / Withdraw</h2>
+                <button onclick="baCloseFundsModal()" class="text-gray-400 hover:text-white" aria-label="Close funds window"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="ba-funds-type-deposit" onclick="baSetFundsType('deposit')" class="px-3 py-2 rounded-md text-xs font-medium border transition">Deposit</button>
+                    <button id="ba-funds-type-withdraw" onclick="baSetFundsType('withdraw')" class="px-3 py-2 rounded-md text-xs font-medium border transition">Withdraw</button>
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Amount ($)</label>
+                    <input type="number" min="0" step="0.01" id="ba-funds-amount" placeholder="0.00" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Date</label>
+                    <input type="date" id="ba-funds-date" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <p id="ba-funds-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button onclick="baCloseFundsModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="baSaveFundsEntry()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BA: Targets Modal -->
+    <div id="ba-targets-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="target" class="w-4 h-4 text-blue-400"></i> Targets</h2>
+                <button onclick="baCloseTargetsModal()" class="text-gray-400 hover:text-white" aria-label="Close targets window"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Monthly PnL Target ($)</label>
+                    <input type="number" step="1" id="ba-target-monthly" placeholder="e.g. 500" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Daily PnL Target ($)</label>
+                    <input type="number" step="1" id="ba-target-daily" placeholder="e.g. 25" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Target Win Rate (%)</label>
+                    <input type="number" step="1" min="0" max="100" id="ba-target-winrate" placeholder="e.g. 60" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button onclick="baCloseTargetsModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="baSaveTargetsModal()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BA: Custom Range Modal -->
+    <div id="ba-range-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-xl border border-aura-border shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-aura-border">
+                <h2 class="text-sm font-bold text-white flex items-center gap-2"><i data-lucide="calendar-range" class="w-4 h-4 text-blue-400"></i> Custom Range</h2>
+                <button onclick="baCloseRangeModal()" class="text-gray-400 hover:text-white" aria-label="Close range window"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 space-y-3">
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Start Date</label>
+                    <input type="date" id="ba-range-start" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <div>
+                    <label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">End Date</label>
+                    <input type="date" id="ba-range-end" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500/50 font-mono">
+                </div>
+                <p id="ba-range-error" class="text-[11px] text-aura-red hidden"></p>
+            </div>
+            <div class="flex items-center justify-end gap-2 px-5 py-4 border-t border-aura-border">
+                <button onclick="baCloseRangeModal()" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:bg-aura-hover transition">Cancel</button>
+                <button onclick="baApplyRangeModal()" class="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white transition shadow-md shadow-blue-600/20">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script src="js/tradely-accounts.js"></script>
+<script src="js/tradely-binary.js"></script>
+<script src="js/tradely-workspace.js"></script>
+<script src="js/tradely-journal.js"></script>
+
+
+
+    <!-- MONTHLY SUMMARY: screenshot lightbox -->
+    <div id="ms-lightbox" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[85] hidden items-center justify-center p-4" onclick="msShotClose()">
+        <img id="ms-lightbox-img" alt="Screenshot preview" src="" class="max-w-full max-h-[85vh] rounded-lg border border-aura-border shadow-2xl" onclick="event.stopPropagation()">
+        <button onclick="event.stopPropagation(); msShotClose()" class="absolute top-4 right-4 text-gray-300 hover:text-white" aria-label="Close screenshot"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <button onclick="event.stopPropagation(); msShotStep(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-aura-border text-gray-300 hover:text-white flex items-center justify-center" aria-label="Step through screenshots"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+        <button onclick="event.stopPropagation(); msShotStep(1)" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/60 border border-aura-border text-gray-300 hover:text-white flex items-center justify-center" aria-label="Step through screenshots"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+        <div id="ms-lightbox-cap" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm font-mono text-gray-200 bg-black/60 px-4 py-1.5 rounded-full whitespace-nowrap"></div>
+    </div>
+<script src="js/tradely-monthly.js"></script>
+
+    <!-- RULES MODAL (phase-wise account rules) -->
+    <div id="rules-modal" onclick="if(event.target===this)rulesClose()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] hidden items-center justify-center p-3 sm:p-4">
+        <div class="glass-card w-full max-w-4xl max-h-[92vh] rounded-xl border border-aura-border shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-aura-border shrink-0">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0"><i data-lucide="scroll-text" class="w-5 h-5 text-amber-300"></i></div>
+                    <div class="min-w-0"><h2 class="text-base font-bold text-white">Account Rules · <span id="rules-title" class="truncate"></span></h2><div id="rules-sub" class="text-xs text-gray-500 font-mono"></div></div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button id="rules-cmp-btn" onclick="rulesCmpMode()" class="px-3 py-1.5 rounded-md text-xs font-medium border border-aura-border bg-aura-bg text-gray-300"><i data-lucide="columns-2" class="w-3.5 h-3.5"></i> Compare</button>
+                    <button onclick="rulesSaveTemplate()" class="px-3 py-1.5 rounded-md text-xs font-medium border border-aura-border bg-aura-bg text-gray-300 hover:text-white transition">Save as template</button>
+                    <button onclick="rulesClose()" class="text-gray-400 hover:text-white p-1" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div id="rules-body" class="p-5 space-y-3 overflow-y-auto flex-1 min-h-0"></div>
+        </div>
+    </div>
+<script src="js/tradely-rules.js"></script>
+
+    <!-- PAYOUT PLANNER MODAL -->
+    <div id="pay-modal" onclick="if(event.target===this)payClose()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] hidden items-center justify-center p-3 sm:p-4">
+        <div class="glass-card w-full max-w-2xl max-h-[92vh] rounded-xl border border-aura-border shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-aura-border shrink-0">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/30 flex items-center justify-center shrink-0"><i data-lucide="sparkles" class="w-4 h-4 text-violet-400"></i></div>
+                    <div class="min-w-0"><h2 class="text-sm font-bold text-white">Payout Plan · <span id="pay-title"></span></h2><div id="pay-sub" class="text-[11px] text-gray-500 font-mono"></div></div>
+                </div>
+                <button onclick="payClose()" class="text-gray-400 hover:text-white p-1" aria-label="Close"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">Payout you want ($)</label><input id="pay-target" type="number" min="0" step="any" placeholder="e.g. 500" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"></div>
+                    <div><label class="text-[10px] font-mono uppercase tracking-wider text-gray-500">In how many days</label><input id="pay-days" type="number" min="1" step="1" placeholder="e.g. 14" class="mt-1.5 w-full bg-aura-bg border border-aura-border rounded-md px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50"></div>
+                </div>
+                <div class="flex gap-2"><button onclick="payBuild()" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition">Make plan</button><button id="pay-ai-btn" onclick="payAI()" class="px-3 py-2 rounded-md text-xs font-medium border border-violet-500/40 text-violet-300 hover:bg-violet-500/10 transition flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Ask AI to refine</button></div>
+                <div id="pay-out" class="space-y-3"></div>
+                <div id="pay-ai" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+<script src="js/tradely-payout.js"></script>
+
+    <!-- AI COACH MODAL -->
+    <div id="cons-modal" onclick="if(event.target===this)consClose()" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80] hidden items-center justify-center p-3 sm:p-4">
+        <div class="glass-card w-full max-w-2xl max-h-[92vh] rounded-xl border border-aura-border shadow-2xl overflow-hidden flex flex-col" role="dialog" aria-modal="true" aria-labelledby="cons-title">
+            <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-aura-border shrink-0">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/30 flex items-center justify-center shrink-0"><i data-lucide="sparkles" class="w-4 h-4 text-violet-400"></i></div>
+                    <div class="min-w-0"><h2 class="text-sm font-bold text-white">AI Coach · <span id="cons-title" class="truncate"></span></h2><div id="cons-sub" class="text-[11px] text-gray-500 font-mono"></div></div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button onclick="consClose()" class="text-gray-400 hover:text-white p-1" aria-label="Close"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div class="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+                <div id="cons-static" class="space-y-3"></div>
+                <div>
+                    <div class="flex items-center justify-between mb-2"><div class="text-xs font-bold text-white flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-violet-400"></i> Coach advice</div><button id="cons-regen" onclick="consRun(true)" class="text-xs text-blue-400 hover:text-white disabled:opacity-50">Regenerate</button></div>
+                    <div id="cons-ai"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="js/tradely-ai.js"></script>
+
+<!-- FLOATING CALCULATOR -->
+<link rel="stylesheet" href="css/calculator.css">
+<div id="calc-win" role="dialog" aria-label="Calculator" tabindex="-1">
+    <div id="calc-head"><span>⌗ Calculator</span><button class="calc-x" onclick="calcClose()" aria-label="Close calculator">✕</button></div>
+    <div class="calc-tabs" role="tablist">
+        <button class="calc-tab on" data-calc-tab="basic" onclick="calcTab('basic')" role="tab">Basic</button>
+        <button class="calc-tab" data-calc-tab="pct" onclick="calcTab('pct')" role="tab">Percent</button>
+        <button class="calc-tab" data-calc-tab="trade" onclick="calcTab('trade')" role="tab">Trade</button>
+    </div>
+
+    <div class="calc-pane on" id="calc-pane-basic">
+        <div class="calc-disp"><div class="calc-expr" id="calc-expr"></div><div class="calc-res" id="calc-res">0</div></div>
+        <div class="calc-grid" id="calc-keys">
+            <button class="calc-k fn" data-k="AC">AC</button><button class="calc-k op" data-k="(">(</button><button class="calc-k op" data-k=")">)</button><button class="calc-k fn" data-k="BS">⌫</button>
+            <button class="calc-k" data-k="7">7</button><button class="calc-k" data-k="8">8</button><button class="calc-k" data-k="9">9</button><button class="calc-k op" data-k="/">÷</button>
+            <button class="calc-k" data-k="4">4</button><button class="calc-k" data-k="5">5</button><button class="calc-k" data-k="6">6</button><button class="calc-k op" data-k="*">×</button>
+            <button class="calc-k" data-k="1">1</button><button class="calc-k" data-k="2">2</button><button class="calc-k" data-k="3">3</button><button class="calc-k op" data-k="-">−</button>
+            <button class="calc-k" data-k="0">0</button><button class="calc-k" data-k=".">.</button><button class="calc-k op" data-k="%">%</button><button class="calc-k op" data-k="+">+</button>
+            <button class="calc-k op" data-k="NEG">±</button><button class="calc-k eq" data-k="=" style="grid-column:span 3">=</button>
+        </div>
+        <div class="calc-hist" id="calc-hist"></div>
+    </div>
+
+    <div class="calc-pane" id="calc-pane-pct">
+        <div class="calc-card"><div class="calc-lbl">1 · X% of Y (find a percentage)</div><div class="calc-row"><input class="calc-in" data-p="a1" inputmode="decimal" placeholder="X"> % of <input class="calc-in" data-p="b1" inputmode="decimal" placeholder="Y"></div><div class="calc-out dim" id="calc-o1">—</div></div>
+        <div class="calc-card"><div class="calc-lbl">2 · X is what % of Y</div><div class="calc-row"><input class="calc-in" data-p="a2" inputmode="decimal" placeholder="X"> of <input class="calc-in" data-p="b2" inputmode="decimal" placeholder="Y"></div><div class="calc-out dim" id="calc-o2">—</div></div>
+        <div class="calc-card"><div class="calc-lbl">3 · % change (X → Y)</div><div class="calc-row">from <input class="calc-in" data-p="a3" inputmode="decimal" placeholder="old"> to <input class="calc-in" data-p="b3" inputmode="decimal" placeholder="new"></div><div class="calc-out dim" id="calc-o3">—</div></div>
+        <div class="calc-card" style="margin-bottom:0"><div class="calc-lbl">4 · Add / subtract %</div><div class="calc-row"><input class="calc-in" data-p="a4" inputmode="decimal" placeholder="amount"> ± <input class="calc-in" data-p="b4" inputmode="decimal" placeholder="%"></div><div class="calc-out dim" id="calc-o4">—</div></div>
+    </div>
+
+    <div class="calc-pane" id="calc-pane-trade">
+        <div class="calc-card"><div class="calc-lbl">Lot size (risk based)</div>
+            <div class="calc-row" style="margin-bottom:6px">Balance $<input class="calc-in" data-t="bal" inputmode="decimal" placeholder="10000"> Risk %<input class="calc-in" style="width:56px" data-t="risk" inputmode="decimal" placeholder="1"></div>
+            <div class="calc-row">SL pips<input class="calc-in" style="width:64px" data-t="sl" inputmode="decimal" placeholder="20"> $/pip/lot<input class="calc-in" style="width:56px" data-t="pv" inputmode="decimal" placeholder="10"></div>
+            <div class="calc-out dim" id="calc-t1">—</div></div>
+        <div class="calc-card" style="margin-bottom:0"><div class="calc-lbl">Risk : Reward</div>
+            <div class="calc-row">Risk $<input class="calc-in" style="width:62px" data-t="r" inputmode="decimal" placeholder="100"> RR 1:<input class="calc-in" style="width:52px" data-t="rr" inputmode="decimal" placeholder="2"></div>
+            <div class="calc-out dim" id="calc-t2">—</div></div>
+    </div>
+</div>
+<script src="js/settings-ai.js"></script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

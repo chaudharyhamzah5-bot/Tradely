@@ -1,0 +1,50 @@
+:root {
+    --h: 38px;
+    --bg: #090a0f;
+    --bg2: #0d0f16;
+    --border: #1f2430;
+    --text: #9ca3af;
+    --text-hi: #f3f4f6;
+    --hover: #1a1d26;
+    --accent: #3b82f6;
+    --danger: #e5484d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: var(--h); overflow: hidden; background: var(--bg); user-select: none; -webkit-user-select: none;
+    font: 500 12px/1 "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif; color: var(--text); }
+
+.bar {
+    height: var(--h); display: flex; align-items: center;
+    background: linear-gradient(180deg, var(--bg2), var(--bg));
+    border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;           /* drag the window by the banner; double-click = maximize */
+    position: relative;
+}
+/* thin accent line on top – shows the window is focused */
+.bar::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent); opacity: 0; transition: opacity .2s; }
+body.focused .bar::before { opacity: .75; }
+
+.brand { display: flex; align-items: center; gap: 9px; padding-left: 12px; min-width: 0; }
+.logo { width: 18px; height: 18px; border-radius: 5px; flex: none; }
+.name { color: var(--text-hi); font-weight: 700; letter-spacing: .02em; }
+.sep { color: #3a4152; }
+.page { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spacer { flex: 1; }
+
+.tools, .ctrls { display: flex; height: 100%; -webkit-app-region: no-drag; }
+.tools { padding-right: 6px; align-items: center; }
+
+.btn {
+    width: 46px; height: 100%; display: grid; place-items: center;
+    background: transparent; border: 0; color: var(--text); cursor: default;
+    transition: background .12s, color .12s;
+}
+.btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
+.btn:hover { background: var(--hover); color: var(--text-hi); }
+.btn:active { background: #232734; }
+.btn.tool { width: 34px; height: 26px; border-radius: 6px; }
+.btn.close:hover { background: var(--danger); color: #fff; }
+.btn.close:active { background: #c93a3f; }
+body:not(.focused) .name, body:not(.focused) .btn { opacity: .55; }
+[hidden] { display: none !important; }

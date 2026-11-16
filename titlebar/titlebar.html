@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:">
+<title>Tradely titlebar</title>
+<link rel="stylesheet" href="titlebar.css">
+</head>
+<body>
+<header id="bar" class="bar">
+    <div class="brand">
+        <img class="logo" src="../assets/icon-512.png" alt="">
+        <span class="name" id="appName">Tradely</span>
+        <span class="sep" id="sep" hidden>/</span>
+        <span class="page" id="pageName"></span>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="tools">
+        <button class="btn tool" id="reload" title="Reload (Ctrl+R)" aria-label="Reload">
+            <svg viewBox="0 0 16 16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3" /></svg>
+        </button>
+    </div>
+
+    <div class="ctrls">
+        <button class="btn" id="min" title="Minimize" aria-label="Minimize">
+            <svg viewBox="0 0 16 16"><path d="M4 8.5h8" /></svg>
+        </button>
+        <button class="btn" id="max" title="Maximize" aria-label="Maximize">
+            <svg viewBox="0 0 16 16" id="icoMax"><rect x="4.25" y="4.25" width="7.5" height="7.5" rx="1.4" /></svg>
+            <svg viewBox="0 0 16 16" id="icoRestore" hidden><rect x="3.75" y="5.75" width="6.5" height="6.5" rx="1.2" /><path d="M6 5.75V4.6c0-.5.4-.85.85-.85h4.55c.5 0 .85.4.85.85v4.55c0 .45-.35.85-.85.85h-1.15" /></svg>
+        </button>
+        <button class="btn close" id="close" title="Close" aria-label="Close">
+            <svg viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" /></svg>
+        </button>
+    </div>
+</header>
+<script src="titlebar.js"></script>
+</body>
+</html>
